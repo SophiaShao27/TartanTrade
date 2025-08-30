@@ -6,8 +6,6 @@ The goal is to provide students with a convenient and secure way to post, browse
 ---
 
 ## Features
-
-## Features
 - 🛒 **Post & manage listings** — students can create, edit, and manage their second-hand item posts  
 - 🔍 **Search & filter** — find items by keyword, category, or price  
 - 💬 **Real-time chat** — buyers and sellers can communicate instantly  

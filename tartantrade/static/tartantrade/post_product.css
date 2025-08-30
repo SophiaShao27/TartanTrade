@@ -1,0 +1,23 @@
+.post-section {
+  padding: 40px 0;
+}
+
+.post-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.post-form label {
+  font-weight: bold;
+}
+
+.post-form input[type="text"],
+.post-form input[type="number"],
+.post-form textarea {
+  margin-bottom: 15px;
+}
+
+.post-form button {
+  display: block;
+  width: 100%;
+}

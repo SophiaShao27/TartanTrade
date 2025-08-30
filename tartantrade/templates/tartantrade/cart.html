@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="{% static 'tartantrade/base.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/home.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/bootstrap.min.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+
+<style>
+  .btn-outline-danger:hover {
+    background-color: white !important;
+    color: #dc3545 !important;
+  }
+
+  .btn-primary {
+    background-color: #dc3545;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #bb2d3b;
+  }
+
+  .cart-item {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding: 15px 0;
+  }
+
+  .cart-item img {
+    width: 100px;
+    height: auto;
+    margin-right: 15px;
+    border-radius: 10px;
+  }
+
+  .cart-item-details {
+    flex: 1;
+  }
+
+  .cart-item-actions {
+    text-align: right;
+    display: flex;
+    align-items: center;
+  }
+
+  .cart-item .price {
+    font-size: 1.2rem;
+    color: #dc3545;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+
+  .cart-total {
+    font-size: 1.5rem;
+    color: #dc3545;
+    font-weight: bold;
+    text-align: right;
+  }
+
+  .quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 1px solid #dc3545;
+    border-radius: 5px;
+    padding: 5px;
+  }
+
+  .quantity-controls button {
+    border: none;
+    background: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .quantity-controls span {
+    margin: 0 10px;
+    font-size: 1rem;
+  }
+</style>
+</head>
+
+<body>
+  <!-- top navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light py-1 border">
+    <div class="container" id="id_nav_top">
+      <!-- Left Nav -->
+      <ul class="navbar-nav me-auto" id="id_nav_top_left">
+        <li class="nav-item">
+          <a class="nav-link" href=""><img src="https://img.icons8.com/ios/50/home--v1.png" height="16" alt="Home">
+            TartanTrade</a>
+        </li>
+      </ul>
+
+      <!-- Right Nav -->
+      <ul class="navbar-nav" id="id_nav_top_right">
+        <li class="nav-item">
+          <span class="nav-link" id="id_nav_top_right_login">Hi! <a href="#" class="text-danger">Login</a></span>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="id_nav_top_right_my_account" role="button"
+            data-bs-toggle="dropdown">
+            My Account
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" id="id_nav_top_right_my_profile">My Profile</a></li>
+            <li><a class="dropdown-item" href="#" id="id_nav_top_right_orders">My Orders</a></li>
+            <li><a class="dropdown-item" href="#" id="id_nav_top_right_posted">Posted Products</a></li>
+            <li><a class="dropdown-item" href="#" id="id_nav_top_right_logout">Logout</a></li>
+          </ul>
+        </li>
+        <!-- <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="siteNav" role="button" data-bs-toggle="dropdown">
+            Navigator
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">Auction System</a></li>
+          </ul>
+        </li> -->
+        <li class="nav-item"><a class="nav-link" href="#" id="id_nav_top_right_all">Browse All</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" id="id_nav_top_right_help">Help</a></li>
+      </ul>
+    </div>
+  </nav>
+
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="container mt-4">
+    <h3 class="text-center text-danger fw-bold">Shopping Cart</h3>
+  
+    {% if cart_items %}
+      <form method="post" action="{% url 'update_cart' %}" id="cart-form">
+        {% csrf_token %}
+        <div id="cart-items">
+          {% for cart_item in cart_items %}
+            <div class="cart-item" data-price="{{ cart_item.price }}">
+              <img src="{{ cart_item.image_url }}" alt="{{ cart_item.title }}">
+              <div class="cart-item-details">
+                <h5>{{ cart_item.title }}</h5>
+                <p>{{ cart_item.description }}</p>
+                <p class="text-muted small">Category: {{ cart_item.category }} | Condition: {{ cart_item.condition }}</p>
+              </div>
+              <div class="cart-item-actions">
+                <span class="price">${{ cart_item.price }}</span>
+                <div class="quantity-controls">
+                  <button type="button" onclick="updateQuantity(this, -1)">-</button>
+                  <span class="quantity">{{ cart_item.quantity }}</span>
+                  <input type="hidden" name="item_id" value="{{ cart_item.item.id }}" class="item-id">
+                  <input type="hidden" name="quantity" value="{{ cart_item.quantity }}" class="quantity-input">
+                  <button type="button" onclick="updateQuantity(this, 1)">+</button>
+                </div>
+                <button type="button" class="btn btn-outline-danger ms-3"
+                        onclick="removeItem('{{ cart_item.item.id }}')">
+                  <i class="fas fa-trash"></i> Remove
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+  
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <button type="button" id="update-cart-btn" class="btn btn-outline-secondary">
+            Update Cart
+          </button>
+          <h4 class="cart-total">Total: $<span id="total-price">{{ total_price }}</span></h4>
+        </div>
+      </form>
+  
+      <div class="text-center mt-3">
+        <form method="post" action="{% url 'redirect_to_checkout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary btn-lg">Proceed to Payment</button>
+        </form>
+      </div>
+    {% else %}
+      <div class="text-center my-5 py-5">
+        <h5>Your cart is empty</h5>
+        <p class="text-muted">Add some items to your cart to get started!</p>
+        <a href="{% url 'home' %}" class="btn btn-primary mt-3">Continue Shopping</a>
+      </div>
+    {% endif %}
+  </div>
+  
+
+
+  <script>
+    // Update quantity when + or - button is clicked
+    function updateQuantity(button, change) {
+      const quantitySpan = button.parentElement.querySelector(".quantity");
+      const quantityInput = button.parentElement.querySelector(".quantity-input");
+      const itemElement = button.closest(".cart-item");
+      const itemId = itemElement.querySelector(".item-id").value;
+
+      let quantity = parseInt(quantitySpan.textContent) + change;
+      if (quantity < 1) quantity = 1;
+
+      quantitySpan.textContent = quantity;
+      quantityInput.value = quantity;
+
+      updateItemTotal(itemElement, quantity);
+      updateCartTotal();
+    }
+
+    // Update the total for a specific item
+    function updateItemTotal(itemElement, quantity) {
+      const price = parseFloat(itemElement.getAttribute("data-price"));
+      const itemTotal = price * quantity;
+    }
+
+    // Update the cart total
+    function updateCartTotal() {
+      let total = 0;
+      document.querySelectorAll(".cart-item").forEach(item => {
+        const price = parseFloat(item.getAttribute("data-price"));
+        const quantity = parseInt(item.querySelector(".quantity").textContent);
+        total += price * quantity;
+      });
+      document.getElementById("total-price").textContent = total.toFixed(2);
+    }
+
+    // Remove item from cart
+    function removeItem(itemId) {
+      if (confirm("Are you sure you want to remove this item from your cart?")) {
+        // Send AJAX request to remove item
+        fetch('{% url "update_cart" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+            'item_id': itemId,
+            'action': 'remove',
+            'quantity': 0
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            // Remove item from DOM
+            const itemElement = document.querySelector(`.cart-item [value="${itemId}"]`).closest('.cart-item');
+            itemElement.remove();
+
+            // Update cart total
+            document.getElementById("total-price").textContent = data.total_price.toFixed(2);
+
+            // If cart is now empty, reload page to show empty cart message
+            if (document.querySelectorAll('.cart-item').length === 0) {
+              location.reload();
+            }
+          }
+        });
+      }
+    }
+
+    // Update cart when update button is clicked
+    document.getElementById('update-cart-btn').addEventListener('click', function() {
+      const items = [];
+
+      document.querySelectorAll('.cart-item').forEach(item => {
+        const itemId = item.querySelector('.item-id').value;
+        const quantity = item.querySelector('.quantity').textContent;
+
+        items.push({
+          item_id: itemId,
+          quantity: quantity
+        });
+      });
+
+      // Send AJAX request to update cart
+      fetch('{% url "update_cart" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          'items': items,
+          'action': 'update'
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          // Show success message
+          alert('Cart updated successfully!');
+          // Update cart total
+          document.getElementById("total-price").textContent = data.total_price.toFixed(2);
+        }
+      });
+    });
+  </script>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <!-- top slogan -->
+      <div class="footer-top">
+        <span class="text-danger">Wide Selection, Easy Shopping</span> |
+        <span class="text-danger">Authentic Products, Premium Service</span> |
+        <span class="text-danger">Everyday Low Prices, Hassle-Free Choices</span>
+      </div>
+
+      <!-- Logo -->
+      <div class="footer-logo-container">
+        <img src="./images/cmu_logo.png" alt="CMU Logo" class="footer-logo">
+        <img src="./images/Logo.png" alt="Tartan Logo" class="footer-logo">
+      </div>
+
+      <!-- third links -->
+      <div class="row text-center">
+        <div class="col-md-4">
+          <h6 class="fw-bold">Shopping Instructions</h6>
+          <p><a href="#">Shopping Process</a> | <a href="#">Payment Methods</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Logistics</h6>
+          <p><a href="#">In-Person Exchange</a> | <a href="#">Self-Pickup</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Help Center</h6>
+          <p><a href="#">Common problems</a> | <a href="#">Account Privacy</a>
+        </div>
+      </div>
+
+      <!-- copyright -->
+      <div class="footer-bottom">
+        <div class="footer-links">
+          <a href="#">About Us</a> | <a href="#">Privacy Policy</a>
+        </div>
+        <p>Copyright &copy; 2025 CMU Copyright</p>
+      </div>
+    </div>
+  </footer>
+
+
+  <script src="{% static 'tartantrade/bootstrap.bundle.min.js' %}"></script>
+</body>
+
+</html>

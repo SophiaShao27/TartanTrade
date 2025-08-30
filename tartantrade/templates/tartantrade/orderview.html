@@ -1,0 +1,62 @@
+{% extends 'tartantrade/base.html' %}
+
+{% load static %}
+
+{% block extra_css %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% endblock %}
+
+{% block title %}Order Details{% endblock %}
+
+{% block content %}
+{% if not order %}
+<div>123</div>
+{% else %}
+<h1>Order Detail</h1>
+<table>
+    <tr>
+        <th>Order Number</th>
+        <td>{{ order.order_number }}</td>
+    </tr>
+    <tr>
+        <th>Order Status</th>
+        <td>{{ order.status }}</td>
+    </tr>
+    <tr>
+        <th>Total Price</th>
+        <td>{{ order.total_price }}</td>
+    </tr>
+    <tr>
+        <th>Payment Method</th>
+        <td>{{ order.payment_method }}</td>
+    </tr>
+    <tr>
+        <th>Order Time</th>
+        <td>{{ order.created_time }}</td>
+    </tr>
+    <tr>
+        <th>Paid Time</th>
+        <td>{{ order.paid_time }}</td>
+    </tr>
+    <tr>
+        <th>Buyer</th>
+        <td>{{ order.buyer.username }}</td>
+    </tr>
+    <tr>
+        <th>Seller</th>
+        <td>{{ order.seller.username }}</td>
+    </tr>
+    <tr>
+        <th>Item</th>
+        <td>{{ order.user.username }}</td>
+    </tr>
+    <tr>
+        <th>Shipping Address</th>
+        <td>{{ order.shipping_address }}</td>
+    </tr>
+    <tr>
+        <th>Remarks</th>
+        <td>{{ order.remarks }}</td>
+    </tr>
+</table>
+{% endblock %}

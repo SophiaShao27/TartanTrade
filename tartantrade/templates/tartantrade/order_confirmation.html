@@ -1,0 +1,155 @@
+{% extends 'tartantrade/base_others.html' %}
+{% load static %}
+
+{% block title %}Order Confirmation - TartanTrade{% endblock %}
+
+{% block extra_css %}
+<style>
+  .confirmation-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .confirmation-card {
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+  }
+
+  .confirmation-header {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  .confirmation-header i {
+    font-size: 4rem;
+    color: #28a745;
+    margin-bottom: 15px;
+  }
+
+  .confirmation-details {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .order-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .order-item:last-child {
+    border-bottom: none;
+  }
+
+  .order-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 20px;
+  }
+
+  .order-item-details {
+    flex: 1;
+  }
+
+  .order-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+
+  .btn-primary {
+    background-color: #dc3545;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #bb2d3b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Messages -->
+{% if messages %}
+<div class="container mt-3">
+  {% for message in messages %}
+    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="container mt-5 confirmation-container">
+  <div class="confirmation-card">
+    <div class="confirmation-header">
+      <i class="fas fa-check-circle"></i>
+      <h2 class="text-success">Order Confirmed!</h2>
+      <p class="lead">Thank you for your purchase. Your order has been placed successfully.</p>
+      <h5 class="text-muted">Order #{{ order_number }}</h5>
+    </div>
+
+    <div class="confirmation-details">
+      <div class="row">
+        <div class="col-md-6">
+          <h5>Order Information</h5>
+          <p><strong>Order Date:</strong> {{ orders.first.created_time|date:"F d, Y" }}</p>
+          <p><strong>Payment Method:</strong> {{ orders.first.payment_method }}</p>
+          <p><strong>Order Status:</strong> {{ orders.first.get_status_display }}</p>
+        </div>
+        <div class="col-md-6">
+          <h5>Shipping Address</h5>
+          <p>{{ orders.first.shipping_address }}</p>
+        </div>
+      </div>
+    </div>
+
+    <h5>Order Summary</h5>
+    {% for order in orders %}
+      <div class="order-item">
+        <img src="{% if order.item.picture %}{{ order.item.picture.url }}{% else %}https://via.placeholder.com/80{% endif %}" alt="{{ order.item.title }}">
+        <div class="order-item-details">
+          <h6 class="mb-1">{{ order.item.title }}</h6>
+          <p class="text-muted small mb-1">{{ order.item.description|truncatechars:100 }}</p>
+          <p class="small mb-0">
+            <span class="text-muted">Seller:</span> {{ order.seller.username }}
+            {% if order.item.condition %}
+              <span class="mx-2">•</span>
+              <span class="text-muted">Condition:</span> {{ order.item.condition }}
+            {% endif %}
+          </p>
+        </div>
+        <div class="text-end ms-3">
+          <strong>${{ order.total_price }}</strong>
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="order-total">
+      <span>Total:</span>
+      <span class="text-danger">${{ total_amount }}</span>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="{% url 'my_orders' %}" class="btn btn-primary">View My Orders</a>
+      <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-3">Continue Shopping</a>
+    </div>
+  </div>
+
+  <div class="text-center mb-5">
+    <p class="text-muted">A confirmation email has been sent to {{ request.user.email }}</p>
+    <p class="small">If you have any questions about your order, please <a href="#">contact us</a>.</p>
+  </div>
+</div>
+{% endblock %}

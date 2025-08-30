@@ -1,0 +1,202 @@
+{% extends 'tartantrade/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - TartanTrade{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'tartantrade/regularItemStyle.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="container mt-4">
+    <div class="product-container">
+        <!-- Product image gallery -->
+        <div class="product-gallery">
+            {% if item.picture %}
+            <img src="{{ item.picture.url }}" alt="{{ item.title }}" class="main-image">
+            {% else %}
+            <img src="{% static 'tartantrade/images/no_image.png' %}" alt="No image available" class="main-image">
+            {% endif %}
+
+            <!-- Gallery navigation buttons -->
+            <div class="gallery-nav">
+                <button class="gallery-btn" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+                <button class="gallery-btn" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Thumbnail images for gallery -->
+            <div class="thumbnails">
+                <div class="thumbnail active">
+                    {% if item.picture %}
+                    <img src="{{ item.picture.url }}" alt="{{ item.title }}">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/no_image.png' %}" alt="No image available">
+                    {% endif %}
+                </div>
+                <!-- Additional thumbnails would be added here if item had multiple photos -->
+            </div>
+        </div>
+
+        <!-- Product information section -->
+        <div class="product-details">
+            <!-- Product title -->
+            <h1 class="product-title">{{ item.title }}</h1>
+
+            <!-- Seller information -->
+            <div class="seller-info">
+                <div class="seller-avatar">
+                    {% if seller.profile.picture %}
+                    <img src="{{ seller.profile.picture.url }}" alt="Seller avatar">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/default_avatar.png' %}" alt="Default avatar">
+                    {% endif %}
+                </div>
+                <span class="seller-name">{{ seller.username }}</span>
+                <!-- add rating here if implemented -->
+            </div>
+
+            <!-- Price display -->
+            <span class="price-tag">${{ item.price }}</span>
+
+            <!-- Product description -->
+            <p class="product-description">{{ item.description }}</p>
+
+            <!-- Action buttons (Buy, Wishlist, Message) -->
+            <div class="action-buttons">
+                <button class="btn btn-primary buy-now-button">
+                    <i class="fas fa-bolt"></i>
+                    Buy Now
+                </button>
+                <div class="secondary-actions">
+                    <button class="btn btn-secondary watchlist-button">
+                        <i class="far fa-heart"></i>
+                        Add to Wishlist
+                    </button>
+                    <button class="btn btn-secondary btn-message">
+                        <i class="far fa-comment"></i>
+                        Message Seller
+                    </button>
+                </div>
+            </div>
+
+            <!-- Payment info and security badges -->
+            <div class="payment-options">
+                <div class="payment-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    Secure Payment
+                </div>
+                <div class="payment-badge">
+                    <i class="far fa-credit-card"></i>
+                    Accepts Debit, Zelle, Cash
+                </div>
+            </div>
+
+            <!-- Additional product details -->
+            <div class="additional-info">
+                <div class="info-row">
+                    <span class="info-label">Condition</span>
+                    <span class="badge badge-new">{{ item.condition }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pickup</span>
+                    <span>{{ item.pickup_location }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Category</span>
+                    <span>{{ item.categories }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Posted</span>
+                    <span>{{ item.upload_time|date:"F j, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buy Now Modal - Appears when Buy Now button is clicked -->
+    <div id="buyNowModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Buy Now</h2>
+            <p>Purchase this item immediately for ${{ item.price }}.</p>
+
+            <form id="buy-now-form" method="post" action="{% url 'buy_now' item.id %}">
+                {% csrf_token %}
+
+                <!-- Shipping address input -->
+                <div class="form-group">
+                    <label for="shipping-address">Shipping Address:</label>
+                    <textarea id="shipping-address" name="shipping_address" rows="3" required></textarea>
+                </div>
+
+                <!-- Payment method selector -->
+                <div class="form-group">
+                    <label for="payment-method">Payment Method:</label>
+                    <select id="payment-method" name="payment_method" required>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Debit Card">Debit Card</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Zelle">Zelle</option>
+                        <option value="Cash">Cash (in-person)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Confirm Purchase</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add to Watchlist Modal - Appears when Add to Wishlist button is clicked -->
+    <div id="addToWatchlistModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Add to Watchlist</h2>
+            <p>This item will be added to your watchlist. You'll be notified of any price changes.</p>
+
+            <form id="watchlist-form" method="post" action="{% url 'add_to_watchlist' item.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-full">Add to Watchlist</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Message Seller Modal - Appears when Message Seller button is clicked -->
+    <div id="messageSellerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Message Seller</h2>
+            <div class="seller-info-modal">
+                <div class="seller-avatar-modal">
+                    {% if seller.profile.picture %}
+                    <img src="{{ seller.profile.picture.url }}" alt="Seller avatar"
+                        style="width: 50px; height: 50px; border-radius: 50%;">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/default_avatar.png' %}" alt="Default avatar"
+                        style="width: 50px; height: 50px; border-radius: 50%;">
+                    {% endif %}
+                </div>
+                <div class="seller-details">
+                    <h3>{{ seller.username }}</h3>
+                </div>
+            </div>
+
+            <!-- Message form -->
+            <form id="message-form" method="post" action="{% url 'send_message' seller.id %}">
+                {% csrf_token %}
+                <div class="message-form">
+                    <textarea name="message" placeholder="Write your message here..." rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden element to store watchlist status-->
+    <div id="watchlist-status" data-is-in-watchlist="{{ is_in_watchlist|yesno:'true,false' }}" style="display: none;">
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'tartantrade/js/regular-item.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "tartantrade/base.html" %}
+
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'transactions/trans.css' %}">
+{% endblock %}
+
+{% block title %}Product Listing{% endblock %}
+
+{% block content %}
+  <section class="filters">
+    <div class="container">
+      <select id="id_category">
+        <option value="">All Categories</option>
+        <option value="electronics">Electronics</option>
+        <option value="books">Books</option>
+        <option value="furniture">Furniture</option>
+        <option value="clothing">Clothing</option>
+      </select>
+
+      <select id="id_price">
+        <option value="">Price Range</option>
+        <option value="low">Low to High</option>
+        <option value="high">High to Low</option>
+      </select>
+
+      <select id="id_rating">
+        <option value="">Sort by Rating</option>
+        <option value="high">Highest First</option>
+        <option value="low">Lowest First</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="product-list">
+    <div class="container">
+        <h2>New Posted Products</h2>
+        <div class="grid">
+            <div class="product-card">
+                <p>Macbook 14</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$6.61</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Apple Pencil</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$50.43</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Earphones</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$20</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Charger</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$10</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Smartwatch</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$4</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Monitor</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$10</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Keyboard</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$10</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Mouse</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$10</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Scanner</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$10</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+
+            <div class="product-card">
+                <p>Printer</p>
+                <img src="{% static 'transactions/images/product1.jpg' %}" alt="Product">
+                <h3>$10</h3>
+                <button class="btn">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+

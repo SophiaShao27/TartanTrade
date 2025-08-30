@@ -1,0 +1,213 @@
+{% extends 'tartantrade/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - Seller View - TartanTrade{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'tartantrade/auctionItemStyle.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="container mt-4">
+    <div class="product-container">
+        <!-- Product image gallery section -->
+        <div class="product-gallery">
+            {% if item.picture %}
+            <img src="{{ item.picture.url }}" alt="{{ item.title }}" class="main-image">
+            {% else %}
+            <img src="{% static 'tartantrade/images/no_image.png' %}" alt="No image available" class="main-image">
+            {% endif %}
+
+            <!-- Gallery navigation buttons -->
+            <div class="gallery-nav">
+                <button class="gallery-btn" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+                <button class="gallery-btn" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <div class="thumbnails">
+                <div class="thumbnail active">
+                    {% if item.picture %}
+                    <img src="{{ item.picture.url }}" alt="{{ item.title }}">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/no_image.png' %}" alt="No image available">
+                    {% endif %}
+                </div>
+                <!-- Additional thumbnails added here if item had multiple photos -->
+            </div>
+        </div>
+
+        <div class="product-details">
+            <!-- Title with Edit button - seller view specific -->
+            <div class="title-edit-container">
+                <h1 class="product-title">{{ item.title }}</h1>
+                <a href="{% url 'edit_item' item.id %}" class="btn btn-edit">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            </div>
+
+            <!-- Seller information (current user) -->
+            <div class="seller-info">
+                <div class="seller-avatar">
+                    {% if request.user.profile.picture %}
+                    <img src="{{ request.user.profile.picture.url }}" alt="Seller avatar">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/default_avatar.png' %}" alt="Default avatar">
+                    {% endif %}
+                </div>
+                <span class="seller-name">{{ request.user.username }}</span>
+                <!-- We could add rating here if implemented -->
+            </div>
+
+            <p class="product-description">{{ item.description }}</p>
+
+            <!-- Auction-specific information section -->
+            <div class="auction-details">
+                <div class="auction-header">
+                    <div class="auction-label">
+                        <i class="fas fa-gavel icon"></i>
+                        Auction
+                    </div>
+                    <!-- Auction countdown timer -->
+                    <div class="auction-time" data-end-time="{{ auction.end_time|date:'c' }}">
+                        <i class="far fa-clock"></i>
+                        {% if auction.end_time > now %}
+                        Ends in <span id="countdown"></span>
+                        {% else %}
+                        Auction ended
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Current bid information -->
+                <div class="price-section">
+                    <div class="current-bid">${{ auction.curr_price }}</div>
+                    <div class="bid-info">
+                        <span>{{ auction.total_bids }} bids</span>
+                        <span>&bull;</span>
+                        <span>Started at ${{ auction.start_price }}</span>
+                    </div>
+
+                    <div class="buy-now-price">
+                        <span>Buy it now for:</span>
+                        <strong>${{ item.price }}</strong>
+                    </div>
+                </div>
+
+                <!-- Seller-specific auction action buttons -->
+                <div class="action-buttons">
+                    <a href="{% url 'edit_auction' auction.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Auction
+                    </a>
+                    {% if auction.total_bids == 0 %}
+                    <a href="{% url 'cancel_auction' auction.id %}" class="btn btn-secondary"
+                        onclick="return confirm('Are you sure you want to cancel this auction?');">
+                        <i class="fas fa-times"></i> Cancel Auction
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="payment-options">
+                    <div class="payment-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        Secure Payment
+                    </div>
+                    <div class="payment-badge">
+                        <i class="far fa-credit-card"></i>
+                        Accepts Debit, Zelle, Cash
+                    </div>
+                </div>
+            </div>
+
+            <div class="additional-info">
+                <div class="info-row">
+                    <span class="info-label">Condition</span>
+                    <span class="badge badge-new">{{ item.condition }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pickup</span>
+                    <span>{{ item.pickup_location }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Category</span>
+                    <span>{{ item.categories }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Posted</span>
+                    <span>{{ item.upload_time|date:"F j, Y" }}</span>
+                </div>
+            </div>
+
+            <!-- Bid history section - only shown if there are bids -->
+            {% if auction.total_bids > 0 %}
+            <div class="bids-section">
+                <h3>Recent Bids</h3>
+                <div class="bid-list">
+                    <!-- This would need a Bid model to be implemented -->
+                    <!-- For now just a placeholder -->
+                    <div class="bid-item">
+                        <div class="bid-user">Anonymous User</div>
+                        <div class="bid-amount">${{ auction.curr_price }}</div>
+                        <div class="bid-time">Just now</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-bids-message">
+                <p>No bids yet. Auction started at ${{ auction.start_price }}.</p>
+            </div>
+            {% endif %}
+
+            <!-- Auction statistics for seller insights -->
+            <div class="item-stats">
+                <h3>Auction Statistics</h3>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ auction.total_bids }}</div>
+                        <div class="stat-label">Total Bids</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ item.views|default:"0" }}</div>
+                        <div class="stat-label">Views</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ item.wishlist_count|default:"0" }}</div>
+                        <div class="stat-label">Watchlist Adds</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Auction Modal - for modifying auction settings -->
+    <div id="editAuctionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Edit Auction</h2>
+
+            <form id="edit-auction-form" method="post" action="{% url 'edit_auction' auction.id %}">
+                {% csrf_token %}
+
+                <!-- Buy Now price can be modified -->
+                <div class="form-group">
+                    <label for="buy-now-price">Buy Now Price ($):</label>
+                    <input type="number" id="buy-now-price" name="buy_now_price" value="{{ item.price|floatformat:2 }}"
+                        step="0.01" min="{{ auction.curr_price|add:'0.01'|floatformat:2 }}" required>
+                </div>
+
+                <!-- End date/time can be extended -->
+                <div class="form-group">
+                    <label for="end-time">Auction End Date:</label>
+                    <input type="datetime-local" id="end-time" name="end_time"
+                        value="{{ auction.end_time|date:'Y-m-d\TH:i' }}" min="{{ now|date:'Y-m-d\TH:i' }}" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Update Auction</button>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'tartantrade/js/auction-seller.js' %}"></script>
+{% endblock %}

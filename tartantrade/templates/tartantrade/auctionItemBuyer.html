@@ -1,0 +1,233 @@
+{% extends 'tartantrade/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - TartanTrade{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'tartantrade/auctionItemStyle.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <div class="product-container">
+        <!-- Product image gallery section -->
+        <div class="product-gallery">
+            {% if item.picture %}
+            <img src="{{ item.picture.url }}" alt="{{ item.title }}" class="main-image">
+            {% else %}
+            <img src="{% static 'tartantrade/images/no_image.png' %}" alt="No image available" class="main-image">
+            {% endif %}
+
+            <!-- Gallery navigation buttons -->
+            <div class="gallery-nav">
+                <button class="gallery-btn" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+                <button class="gallery-btn" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <div class="thumbnails">
+                <div class="thumbnail active">
+                    {% if item.picture %}
+                    <img src="{{ item.picture.url }}" alt="{{ item.title }}">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/no_image.png' %}" alt="No image available">
+                    {% endif %}
+                </div>
+                <!-- Additional thumbnails added here if item had multiple photos -->
+            </div>
+        </div>
+
+        <div class="product-details">
+            <h1 class="product-title">{{ item.title }}</h1>
+
+            <!-- Seller information display -->
+            <div class="seller-info">
+                <div class="seller-avatar">
+                    {% if seller.profile.picture %}
+                    <img src="{{ seller.profile.picture.url }}" alt="Seller avatar">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/default_avatar.png' %}" alt="Default avatar">
+                    {% endif %}
+                </div>
+                <span class="seller-name">{{ seller.username }}</span>
+                <!-- We could add rating here if implemented -->
+            </div>
+
+            <p class="product-description">{{ item.description }}</p>
+
+            <!-- Auction-specific information section -->
+            <div class="auction-details">
+                <div class="auction-header">
+                    <div class="auction-label">
+                        <i class="fas fa-gavel icon"></i>
+                        Auction
+                    </div>
+                    <!-- Auction countdown timer -->
+                    <div class="auction-time" data-end-time="{{ auction.end_time|date:'c' }}">
+                        <i class="far fa-clock"></i>
+                        {% if auction.end_time > now %}
+                        Ends in <span id="countdown"></span>
+                        {% else %}
+                        Auction ended
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Current bid and price information -->
+                <div class="price-section">
+                    <div class="current-bid">${{ auction.curr_price }}</div>
+                    <div class="bid-info">
+                        <span>{{ auction.total_bids }} bids</span>
+                        <span>&bull;</span>
+                        <span>Started at ${{ auction.start_price }}</span>
+                    </div>
+
+                    <!-- Buy Now option display -->
+                    <div class="buy-now-price">
+                        <span>Buy it now for:</span>
+                        <strong>${{ item.price }}</strong>
+                    </div>
+                </div>
+
+                <!-- Auction action buttons -->
+                <div class="action-buttons">
+                    {% if auction.end_time > now %}
+                    <button class="btn btn-primary bid-button" data-min-bid="{{ auction.curr_price|floatformat:2 }}">
+                        <i class="fas fa-gavel"></i>
+                        Place Bid
+                    </button>
+                    <button class="btn btn-secondary buy-now-button">
+                        <i class="fas fa-bolt"></i>
+                        Buy Now
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>
+                        <i class="fas fa-exclamation-circle"></i>
+                        Auction Ended
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-secondary btn-full watchlist-button">
+                        <i class="far fa-heart"></i>
+                        Add to Watchlist
+                    </button>
+                    <button class="btn btn-secondary btn-full btn-message">
+                        <i class="far fa-comment"></i>
+                        Message Seller
+                    </button>
+                </div>
+
+                <div class="payment-options">
+                    <div class="payment-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        Secure Payment
+                    </div>
+                    <div class="payment-badge">
+                        <i class="far fa-credit-card"></i>
+                        Accepts Debit, Zelle, Cash
+                    </div>
+                </div>
+            </div>
+
+            <div class="additional-info">
+                <div class="info-row">
+                    <span class="info-label">Condition</span>
+                    <span class="badge badge-new">{{ item.condition }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pickup</span>
+                    <span>{{ item.pickup_location }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Place Bid Modal - Appears when user clicks 'Place Bid' -->
+    <div id="placeBidModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Place a Bid</h2>
+            <p>Current bid: $<span id="current-bid-amount">{{ auction.curr_price }}</span></p>
+
+            <form id="bid-form" method="post" action="{% url 'place_bid' auction.id %}">
+                {% csrf_token %}
+                <div class="bid-details">
+                    <h3>Your bid</h3>
+                    <!-- Bid amount input with validation -->
+                    <div class="bid-input-group">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="bidAmount" name="bid_amount"
+                            value="{{ auction.curr_price|add:'10'|floatformat:2 }}"
+                            min="{{ auction.curr_price|add:'0.01'|floatformat:2 }}" step="0.01" required>
+                    </div>
+                    <p class="minimum-bid">Minimum bid: ${{ auction.curr_price|add:'0.01'|floatformat:2 }}</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Confirm Bid</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Buy Now Modal - Bypasses auction process -->
+    <div id="buyNowModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Buy Now</h2>
+            <p>Purchase this item immediately at the buy-now price of ${{ item.price }}.</p>
+
+            <form id="buy-now-form" method="post" action="{% url 'buy_now' item.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-full">Confirm Purchase</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add to Watchlist Modal -->
+    <div id="addToWatchlistModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Add to Watchlist</h2>
+            <p>This item will be added to your watchlist.</p>
+
+            <form id="watchlist-form" method="post" action="{% url 'add_to_watchlist' item.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-full">Add to Watchlist</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Message Seller Modal -->
+    <div id="messageSellerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Message Seller</h2>
+            <div class="seller-info-modal">
+                <div class="seller-avatar-modal">
+                    {% if seller.profile.picture %}
+                    <img src="{{ seller.profile.picture.url }}" alt="Seller avatar">
+                    {% else %}
+                    <img src="{% static 'tartantrade/images/default_avatar.png' %}" alt="Default avatar">
+                    {% endif %}
+                </div>
+                <div class="seller-details">
+                    <h3>{{ seller.username }}</h3>
+                </div>
+            </div>
+
+            <form id="message-form" method="post" action="{% url 'send_message' seller.id %}">
+                {% csrf_token %}
+                <div class="message-form">
+                    <textarea name="message" placeholder="Write your message here..." rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden element for JavaScript to track watchlist status -->
+    <div id="watchlist-status" data-is-in-watchlist="{{ is_in_watchlist|yesno:'true,false' }}" style="display: none;">
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'tartantrade/js/auction-item.js' %}"></script>
+{% endblock %}

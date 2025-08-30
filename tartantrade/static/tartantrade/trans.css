@@ -1,0 +1,155 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+
+header {
+    background: white;
+    padding: 8px 0; 
+    border-bottom: 2px solid #ddd;
+}
+
+header .container {
+    display: flex;
+    align-items: center; 
+    justify-content: space-between; 
+}
+
+.rating {
+    font-size: 14px; 
+    color: gray; 
+    font-weight: normal; 
+    margin: 10px 0;
+}
+
+.logo {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    text-align: right;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+    font-size: 16px; 
+    padding: 4px 8px; 
+}
+
+.filters {
+    padding: 20px 0;
+    text-align: center;
+}
+
+/* 修改处：统一选择器为 id_ 格式 */
+#id_category,
+#id_price,
+#id_rating {
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.product-list {
+    padding: 20px 0;
+}
+
+.product-list h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 15px;
+    row-gap: 30px;
+}
+
+.product-card {
+    font-size: 14px; 
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    width: calc(20% - 12px); 
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+.product-card img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.product-card h3 {
+    margin: 10px 0;
+    font-size: 18px;
+}
+
+.product-card p {
+    color: gray;
+}
+
+.rating {
+    margin: 10px 0;
+}
+
+.btn {
+    background: #dc3545;
+    color: white;
+    padding: 10px;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.btn:hover {
+    background: #b02a37;
+}
+
+@media (max-width: 1200px) {
+    .product-card {
+        width: calc(25% - 12px); 
+    }
+}
+
+@media (max-width: 900px) {
+    .product-card {
+        width: calc(33.33% - 12px);
+    }
+}
+
+@media (max-width: 600px) {
+    .product-card {
+        width: calc(50% - 12px); 
+    }
+}
+
+@media (max-width: 400px) {
+    .product-card {
+        width: 100%; 
+    }
+}

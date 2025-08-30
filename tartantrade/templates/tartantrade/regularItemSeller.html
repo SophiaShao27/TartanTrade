@@ -1,0 +1,210 @@
+{% extends 'tartantrade/base.html' %}
+{% load static %}
+
+{% block title %}{{ item.title }} - Seller View - TartanTrade{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'tartantrade/regularItemStyle.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="container mt-4">
+    <div class="product-container">
+        <!-- Product image gallery section -->
+        <div class="product-gallery">
+            {% if item.picture %}
+            <img src="{{ item.picture.url }}" alt="{{ item.title }}" class="main-image">
+            {% else %}
+            <img src="{% static 'images/no_image.png' %}" alt="No image available" class="main-image">
+            {% endif %}
+
+            <!-- Gallery navigation buttons -->
+            <div class="gallery-nav">
+                <button class="gallery-btn" aria-label="Previous image"><i class="fas fa-chevron-left"></i></button>
+                <button class="gallery-btn" aria-label="Next image"><i class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <div class="thumbnails">
+                <div class="thumbnail active">
+                    {% if item.picture %}
+                    <img src="{{ item.picture.url }}" alt="{{ item.title }}">
+                    {% else %}
+                    <img src="{% static 'images/no_image.png' %}" alt="No image available">
+                    {% endif %}
+                </div>
+                <!-- Additional thumbnails added here if item had multiple photos -->
+            </div>
+        </div>
+
+        <div class="product-details">
+            <!-- Title with Edit button - seller view specific -->
+            <!-- <div class="title-edit-container">
+                <h1 class="product-title">{{ item.title }}</h1>
+                <a href="{% url 'edit_item' item.id %}" class="btn btn-edit">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            </div> -->
+
+            <!-- Seller information (showing current user) -->
+            <div class="seller-info">
+                <div class="seller-avatar">
+                    {% if request.user.profile.picture %}
+                    <img src="{{ request.user.profile.picture.url }}" alt="Seller avatar">
+                    {% else %}
+                    <img src="{% static 'images/default_avatar.png' %}" alt="Default avatar">
+                    {% endif %}
+                </div>
+                <span class="seller-name">{{ request.user.username }}</span>
+                <!-- We could add rating here if implemented -->
+            </div>
+
+            <span class="price-tag">${{ item.price }}</span>
+
+            <p class="product-description">{{ item.description }}</p>
+
+            <!-- Seller-specific action buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="open-edit-modal">
+                    <i class="fas fa-edit"></i> Edit Item
+                </button>
+                <a href="{% url 'delete_item' item.id %}" class="btn btn-secondary"
+                    onclick="return confirm('Are you sure you want to delete this item?');">
+                    <i class="fas fa-trash"></i> Delete Item
+                </a>
+                <button class="btn btn-secondary convert-auction-btn">
+                    <i class="fas fa-gavel"></i> Convert to Auction
+                </button>
+            </div>
+
+            <div class="payment-options">
+                <div class="payment-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    Secure Payment
+                </div>
+                <div class="payment-badge">
+                    <i class="far fa-credit-card"></i>
+                    Accepts Debit, Zelle, Cash
+                </div>
+            </div>
+
+            <div class="additional-info">
+                <div class="info-row">
+                    <span class="info-label">Condition</span>
+                    <span class="badge badge-new">{{ item.condition }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Pickup</span>
+                    <span>{{ item.pickup_location }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Category</span>
+                    <span>{{ item.categories }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Posted</span>
+                    <span>{{ item.upload_time|date:"F j, Y" }}</span>
+                </div>
+            </div>
+
+            <!-- Item statistics section - seller view specific -->
+            <div class="item-stats">
+                <h3>Item Statistics</h3>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ item.views|default:"0" }}</div>
+                        <div class="stat-label">Views</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ item.wishlist_count|default:"0" }}</div>
+                        <div class="stat-label">Watchlist Adds</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ days_listed }}</div>
+                        <div class="stat-label">Days Listed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Convert to Auction Modal - seller view specific -->
+    <div id="convertToAuctionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Convert to Auction</h2>
+            <p>Set up auction details for your item "{{ item.title }}".</p>
+
+            <form id="auction-form" method="post" action="{% url 'convert_to_auction' item.id %}">
+                {% csrf_token %}
+
+                <!-- Auction starting price input -->
+                <div class="form-group">
+                    <label for="start_price">Starting Price ($):</label>
+                    <input type="number" id="start_price" name="start_price" value="{{ item.price|floatformat:2 }}"
+                        step="0.01" min="0.01" required>
+                </div>
+
+                <!-- Auction end date/time picker -->
+                <div class="form-group">
+                    <label for="end_time">Auction End Date:</label>
+                    <input type="datetime-local" id="end_time" name="end_time" required>
+                </div>
+
+                <!-- Buy Now price option -->
+                <div class="form-group">
+                    <label for="buy_now_price">Buy Now Price ($):</label>
+                    <input type="number" id="buy_now_price" name="buy_now_price" value="{{ item.price|floatformat:2 }}"
+                        step="0.01" min="0.01" required>
+                    <small>This will update your item's price.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Create Auction</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+<div id="editItemModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Edit Item: {{ item.title }}</h2>
+  
+      <form id="edit-item-form">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="edit-price">Price ($)</label>
+          <input type="number" step="0.01" min="0.01" id="edit-price" name="price" class="form-control" value="{{ item.price }}" required>
+        </div>
+  
+        <div class="form-group">
+          <label for="edit-description">Description</label>
+          <textarea id="edit-description" name="description" class="form-control" rows="4" required>{{ item.description }}</textarea>
+        </div>
+  
+        <div class="form-group">
+          <label for="edit-pickup">Pickup Location</label>
+          <input type="text" id="edit-pickup" name="pickup_location" class="form-control" value="{{ item.pickup_location }}" required>
+        </div>
+  
+        <div class="form-group">
+          <label for="edit-condition">Condition</label>
+          <select id="edit-condition" name="condition" class="form-control" required>
+            {% for cond in condition_choices %}
+              <option value="{{ cond }}" {% if item.condition == cond %}selected{% endif %}>{{ cond }}</option>
+            {% endfor %}
+          </select>
+        </div>
+  
+        <button type="submit" class="btn btn-primary btn-full mt-3">Update Item</button>
+      </form>
+    </div>
+  </div>
+  
+<!-- 放在页面任意地方（如 form 外面） -->
+<div id="edit-item-url" data-url="{% url 'edit_item' item.id %}"></div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'tartantrade/regularSeller.js' %}"></script>
+{% endblock %}

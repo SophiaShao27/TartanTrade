@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Google OAuth Login</title>
+  <link rel="stylesheet" href="./css/bootstrap.min.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f8f9fa;
+    }
+
+    .login-container {
+      text-align: center;
+      padding: 3rem;
+      border-radius: 10px;
+      background: white;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .google-login {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <img src="images/Logo.png" alt="logo" class="mb-3" style="max-height: 80px;">
+    <h2 class="mb-3">Andrew ID Login</h2>
+    <p class="text-muted">Please use your Andrew ID to visit TartanTrade</p>
+
+    <!-- Google Sign-in button -->
+    <div id="g_id_onload" data-client_id="Your Andrew ID" data-login_uri="https://your-backend.com/oauth/callback"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin google-login" data-type="standard" data-size="large" data-theme="outline"
+      data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left">
+    </div>
+
+  </div>
+
+  <script src="./js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

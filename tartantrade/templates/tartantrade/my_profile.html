@@ -1,0 +1,162 @@
+{% extends "tartantrade/base.html" %}
+
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'tartantrade/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="profile">
+  <div class="container">
+    <div class="profile-header">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if profile.picture %}
+          <img src="{{ profile.picture.url }}" alt="User Avatar" class="profile-avatar">
+        {% else %}
+          <img src="{% static 'images/head.jpg' %}" alt="User Avatar" class="profile-avatar">
+        {% endif %}
+        <input type="file" name="profile_picture" accept="image/*" onchange="this.form.submit()" class="form-control mt-2" style="width: 200px;">
+      </form>
+      <div class="profile-info">
+        <h2 class="profile-name">{{ user.username }}</h2>
+        <p class="profile-contact"><strong>Contact:</strong> {{ user.email }}</p>
+        {% if avg_rating %}
+          <p class="profile-rating"><strong>Avg Rating:</strong> {{ avg_rating|floatformat:1 }} / 5</p>
+        {% else %}
+          <p class="profile-rating">No ratings yet</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>        
+</section>
+
+<section class="post-product">
+  <div class="container text-end">
+    <a href="{% url 'post_product' %}" class="btn btn-primary">Post New Product</a>
+  </div>
+</section>
+
+<section class="product-list">
+  <div class="container">
+    <h2>My Posted Products</h2>
+    <div class="grid">
+      {% for item in posted_products %}
+        <div class="product-card {% if item in sold_products %}sold{% endif %}">
+          <img src="{{ item.picture.url }}" alt="Product">
+          <div class="product-info">
+            <h3>${{ item.price }}</h3>
+            <p>{{ item.description }}</p>
+            {% if item in sold_products %}
+              <span class="badge bg-danger position-absolute top-0 end-0 m-2">SOLD</span>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">You haven't posted anything yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="product-list">
+  <div class="container">
+    <h2>My Purchased Products</h2>
+    <div class="grid">
+      {% for product in purchased_products %}
+        <div class="product-card">
+          <img src="{{ product.picture.url }}" alt="Product">
+          <div class="product-info">
+            <h3>${{ product.price }}</h3>
+            <p><strong>Seller:</strong> {{ product.user.username }}</p>
+
+            <button class="btn review-btn" onclick="toggleForm('form-{{ product.id }}')">Leave Review</button>
+
+            <form id="form-{{ product.id }}" method="POST" style="display: none; margin-top: 10px;">
+              {% csrf_token %}
+              <input type="hidden" name="sendto" value="{{ product.user.id }}">
+              <input type="hidden" name="item_id" value="{{ product.id }}">
+
+              <div class="mb-1">
+                <label>Rating:</label>
+                <input type="number" name="rating" min="1" max="5" class="form-control" required>
+              </div>
+              <div class="mb-1">
+                <label>Message:</label>
+                <textarea name="rating_message" class="form-control" rows="2" required></textarea>
+              </div>
+              <button type="submit" class="btn review-btn mt-1">Submit Review</button>
+            </form>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">No purchases yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="reviews">
+  <div class="container">
+    <h2>Reviews Received</h2>
+    {% if reviews %}
+      <ul class="list-group">
+        {% for review in reviews %}
+          <li class="list-group-item">
+            <strong>From:</strong> {{ review.sendfrom.username }}<br>
+            <strong>Rating:</strong> {{ review.rating }} / 5<br>
+            <strong>Message:</strong> {{ review.rating_message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No reviews yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+
+<section class="cart">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">My Cart</h3>
+  </div>
+
+  <div class="row">
+    {% for cart_item in cart_items %}
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <img src="{{ cart_item.picture.url }}" class="card-img-top" alt="{{ cart_item.title }}" style="height: 180px; object-fit: cover;">
+          <div class="card-body p-2">
+            <h6 class="card-title">{{ cart_item.title|truncatechars:40 }}</h6>
+            <p class="card-text small">{{ cart_item.description|truncatechars:60 }}</p>
+            <p class="text-danger fw-bold">${{ cart_item.price }}</p>
+            <a href="{% url 'item_detail' cart_item.id %}" class="btn btn-sm btn-outline-danger w-100">View Item</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No items in your cart.</p>
+    {% endfor %}
+  </div>
+
+  <a href="{% url 'cart_view' %}" class="btn btn-outline-danger">Go to Cart</a>
+</section>
+
+
+
+
+<script>
+  function toggleForm(id) {
+    const form = document.getElementById(id)
+    if (form.style.display === "none") {
+      form.style.display = "block"
+    } else {
+      form.style.display = "none"
+    }
+  }
+</script>
+
+{% endblock %}

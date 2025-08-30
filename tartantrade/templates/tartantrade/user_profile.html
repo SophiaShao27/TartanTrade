@@ -1,0 +1,88 @@
+{% extends "tartantrade/base.html" %}
+
+{% load static %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'tartantrade/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="profile">
+  <div class="container">
+    <div class="profile-header">
+      {% if profile.picture %}
+        <img src="{{ profile.picture.url }}" alt="User Avatar" class="profile-avatar">
+      {% else %}
+        <img src="{% static 'images/head.jpg' %}" alt="User Avatar" class="profile-avatar">
+      {% endif %}
+      <div class="profile-info">
+        <h2 class="profile-name">{{ profile.user.username }}</h2>
+        <p class="profile-contact"><strong>Email:</strong> {{ profile.user.email }}</p>
+        {% if avg_rating %}
+          <p class="profile-rating"><strong>Avg Rating:</strong> {{ avg_rating|floatformat:1 }} / 5</p>
+        {% else %}
+          <p class="profile-rating">No ratings yet</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="product-list">
+  <div class="container">
+    <h2>Items for Sale</h2>
+    <div class="grid">
+      {% for item in posted_products %}
+        <div class="product-card">
+          <img src="{{ item.picture.url }}" alt="Product">
+          <div class="product-info">
+            <h3>${{ item.price }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+        </div>
+      {% empty %}
+        <p class="empty-message">No items currently for sale.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="product-list">
+  <div class="container">
+    <h2>Reviews</h2>
+    <div class="review-list">
+      {% for review in reviews %}
+        <div class="review-card">
+          <p><strong>{{ review.sendfrom.username }}:</strong> Rated {{ review.rating }} / 5</p>
+          <p>{{ review.rating_message }}</p>
+        </div>
+      {% empty %}
+        <p class="empty-message">No reviews yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if can_review %}
+<section class="leave-review">
+  <div class="container">
+    <h2>Leave a Review</h2>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="mb-1">
+        <label>Rating (1-5):</label>
+        <input type="number" name="rating" min="1" max="5" class="form-control" required>
+      </div>
+      <div class="mb-1">
+        <label>Message:</label>
+        <textarea name="rating_message" class="form-control" rows="3" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary mt-2">Submit</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

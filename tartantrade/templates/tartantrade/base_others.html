@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% block title %}<title>Base</title>{% endblock%}
+  <link rel="stylesheet" href="{% static 'tartantrade/base.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/home.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/bootstrap.min.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+
+  <style>
+  </style>
+</head>
+
+<body>
+  <!-- top navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light py-1 border">
+    <div class="container">
+      <!-- Left Nav -->
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">
+            <img src="https://img.icons8.com/ios/50/home--v1.png" height="16" alt="Home">
+            TartanTrade
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right Nav -->
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <span class="nav-link">
+          Hi!
+          {% if user.is_authenticated %}
+          <span class="text-success">{{ user.username }}</span>
+          {% else %}
+          <a href="{% url 'google_login' %}" class="text-danger">Login</a>
+          {% endif %}
+          </span>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            My Account
+          </a>
+          <ul class="dropdown-menu">
+            {% if user.is_authenticated %}
+              <li><a class="dropdown-item" href="{% url 'my_profile' %}">My Profile</a></li>
+              <li><a class="dropdown-item" href="{% url 'my_orders' %}">My Orders</a></li>
+              <li><a class="dropdown-item" href="{% url 'my_products' %}">My Products</a></li>
+              <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+            {% else %}
+              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Profile</a></li>
+              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Orders</a></li>
+              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Products</a></li>
+              <li><a class="dropdown-item" href="{% url 'google_login' %}">Login</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'help' %}">Help</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <br>
+  <br>
+  <br>
+
+  {% block extra_css %}
+  {% endblock %}
+
+  {% block contents %}
+  {% endblock %}
+
+  {% block extra_js %}
+  {% endblock %}
+
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <!-- top slogan -->
+      <div class="footer-top">
+        <span class="text-danger">Wide Selection, Easy Shopping</span> |
+        <span class="text-danger">Authentic Products, Premium Service</span> |
+        <span class="text-danger">Everyday Low Prices, Hassle-Free Choices</span>
+      </div>
+
+      <!-- Logo -->
+      <div class="footer-logo-container">
+        <img src="./images/cmu_logo.png" alt="CMU Logo" class="footer-logo">
+        <img src="./images/Logo.png" alt="Tartan Logo" class="footer-logo">
+      </div>
+
+      <!-- third links -->
+      <div class="row text-center">
+        <div class="col-md-4">
+          <h6 class="fw-bold">Shopping Instructions</h6>
+          <p><a href="#">Shopping Process</a> | <a href="#">Payment Methods</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Logistics</h6>
+          <p><a href="#">In-Person Exchange</a> | <a href="#">Self-Pickup</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Help Center</h6>
+          <p><a href="#">Common problems</a> | <a href="#">Account Privacy</a>
+        </div>
+      </div>
+
+      <!-- copyright -->
+      <div class="footer-bottom">
+        <div class="footer-links">
+          <a href="#">About Us</a> | <a href="#">Privacy Policy</a>
+        </div>
+        <p>Copyright &copy; 2025 CMU Copyright</p>
+      </div>
+    </div>
+  </footer>
+
+
+  <script src="{% static 'tartantrade/bootstrap.bundle.min.js' %}"></script>
+</body>
+
+</html>

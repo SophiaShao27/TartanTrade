@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <link rel="stylesheet" href="{% static 'tartantrade/base.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/home.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/bootstrap.min.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- top navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light py-1 border">
+    <div class="container" id="id_nav_top">
+      <!-- Left Nav -->
+      <ul class="navbar-nav me-auto" id="id_nav_top_left">
+        <li class="nav-item">
+          <a class="nav-link" id="id_nav_top_left_home" href="{% url 'home' %}"><img
+              src="https://img.icons8.com/ios/50/home--v1.png" height="16" alt="Home">
+            TartanTrade</a>
+        </li>
+      </ul>
+
+      <!-- Right Nav -->
+      <ul class="navbar-nav" id="id_nav_top_right">
+        <li class="nav-item">
+          <span class="nav-link" id="id_nav_top_right_hi">
+            Hi!
+            {% if user.is_authenticated %}
+            <span class="text-success" id="id_nav_top_right_username">{{ user.username }}</span>
+            {% else %}
+            <a href="{% url 'google_login' %}" class="text-danger" id="id_nav_top_right_login">Login</a>
+            {% endif %}
+          </span>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="id_nav_top_right_account" role="button"
+            data-bs-toggle="dropdown">
+            My Account
+          </a>
+          <ul class="dropdown-menu">
+            {% if user.is_authenticated %}
+            <li><a class="dropdown-item" href="{% url 'my_profile' %}" id="id_nav_top_right_account_profile_no_login">My
+                Profile</a></li>
+            <li><a class="dropdown-item" href="{% url 'my_orders' %}" id="id_nav_top_right_account_orders_no_login">My
+                Orders</a></li>
+            <li><a class="dropdown-item" href="{% url 'product_list' %}"
+                id="id_nav_top_right_account_posted_no_login">My Products</a></li>
+            <li><a class="dropdown-item" href="{% url 'logout' %}" id="id_nav_top_right_account_logout">Logout</a></li>
+            {% else %}
+            <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;"
+                id="id_nav_top_right_account_profile">My Profile</a></li>
+            <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;"
+                id="id_nav_top_right_account_orders">My Orders</a></li>
+            <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;"
+                id="id_nav_top_right_account_posted">My Products</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'help' %}" id="id_nav_top_right_help">Help</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- top search navigation -->
+  <nav class="container-fluid bg-light py-3 border">
+    <div class="row align-items-center justify-content-between">
+      <!-- top search navigation LOGO -->
+      <div class="col-lg-3 col-md-3 col-sm-12 text-center">
+        <a href="{% url 'home' %}" class="d-flex align-items-center justify-content-center text-decoration-none"
+          id="id_nav_top_search_logo">
+          <img src="{% static 'images/Logo.png' %}" alt="Tartan Logo" height="70" id="id_nav_top_search_logo_img">
+          <span class="fs-2 fw-bold text-danger ms-2" id="id_nav_top_search_logo_text">TartanTrade</span>
+        </a>
+      </div>
+
+      <!-- top search -->
+      <div class="col-lg-6 col-md-6 col-sm-12">
+        <form class="d-flex" action="{% url 'product_list' %}" method="get">
+          <input type="text" class="form-control border border-danger fs-4 py-3" placeholder="Search"
+            name="nav_top_search" id="id_nav_top_search_search_text" value="{{ query }}">
+          <button class="btn btn-danger fs-4 px-4" type="submit" id="id_nav_top_search_search_button">Search</button>
+        </form>
+      </div>
+
+      <!-- cart -->
+      <div class="col-lg-3 col-md-3 text-center">
+        {% if user.is_authenticated %}
+        <a href="{% url 'cart_view' %}" class="text-danger text-decoration-none position-relative d-inline-block">
+          <i class="bi bi-cart fs-2 text-danger"></i>
+        </a>
+        {% else %}
+        <a href="{% url 'home' %}" onclick="showLoginAlert(); return false;"
+          class="text-danger text-decoration-none position-relative d-inline-block">
+          <i class="bi bi-cart fs-2 text-danger"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <br>
+  <br>
+
+  <div class="container mt-3" id="message-container">
+    {% if messages %}
+    {% for message in messages %}
+    <div
+      class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show"
+      role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if error_message %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ error_message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="container mt-4 main-content" id="id_main_ad">
+    <div class="row align-items-stretch">
+      <!-- Left Category List -->
+      <div class="col-md-3 d-flex" id="id_main_ad_category">
+        <div class="category-list border rounded bg-light w-100 p-3 equal-height">
+          <div class="category-item border-bottom p-1" id="id_main_ad_category_all">
+            <a href="{% url 'product_list' %}?category=All" class="text-decoration-none text-dark">All</a>
+          </div>
+          <div class="category-item border-bottom p-1" id="id_main_ad_category_elec">
+            <a href="{% url 'product_list' %}?category=Electronics"
+              class="text-decoration-none text-dark">Electronics</a>
+          </div>
+          <div class="category-item border-bottom p-1" id="id_main_ad_category_book">
+            <a href="{% url 'product_list' %}?category=Books" class="text-decoration-none text-dark">Books</a>
+          </div>
+          <div class="category-item border-bottom p-1" id="id_main_ad_category_furn">
+            <a href="{% url 'product_list' %}?category=Furniture" class="text-decoration-none text-dark">Furniture</a>
+          </div>
+          <div class="category-item p-1" id="id_main_ad_category_groc">
+            <a href="{% url 'product_list' %}?category=Grocery" class="text-decoration-none text-dark">Grocery</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- banner ad & accouncement -->
+      <div class="col-md-6 d-flex flex-column" id="id_main_ad_banner">
+
+        <div id="carouselExampleIndicators" class="carousel slide w-100 rounded overflow-hidden equal-height"
+          data-bs-ride="carousel" style="min-height: 400px;">
+          <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0"
+              class="active"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"></button>
+          </div>
+          <div class="carousel-inner h-100">
+            {% if trending_items %}
+            {% for item in trending_items %}
+            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+              {% if item.picture %}
+              <img src="{{ item.picture.url }}" class="d-block w-105 h-110 object-fit-cover" alt="{{ item.title }}"
+                id="id_main_ad_banner_{{ forloop.counter }}">
+              {% else %}
+              <img src="{% static 'images/banner_' %}{{ forloop.counter }}.png"
+                class="d-block w-105 h-110 object-fit-cover" alt="banner_{{ forloop.counter }}"
+                id="id_main_ad_banner_{{ forloop.counter }}">
+              {% endif %}
+              <div class="carousel-caption d-none d-md-block">
+                <h5>{{ item.title }}</h5>
+                <p>${{ item.price }} - Most Popular!</p>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="carousel-item active">
+              <img src="{% static 'images/banner_1.png' %}" class="d-block w-105 h-110 object-fit-cover" alt="banner_1"
+                id="id_main_ad_banner_1">
+            </div>
+            <div class="carousel-item">
+              <img src="{% static 'images/banner_2.png' %}" class="d-block w-105 h-110 object-fit-cover" alt="banner_2"
+                id="id_main_ad_banner_2">
+            </div>
+            <div class="carousel-item">
+              <img src="{% static 'images/banner_3.png' %}" class="d-block w-105 h-110 object-fit-cover" alt="banner_3"
+                id="id_main_ad_banner_3">
+            </div>
+            {% endif %}
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
+            data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
+            data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+          </button>
+        </div>
+
+        <!-- announcement -->
+        <div class="mt-2 p-3 bg-light rounded border" id="id_main_ad_announcement">
+          <h5 class="fw-bold fs-4">📢 Recent Announcement</h5>
+          <ul class="list-unstyled mb-0 fs-5">
+            <li id="id_main_ad_accouncement_acti">🔹【Activity】Spring Vacation, 50% discount!</li>
+            <li id="id_main_ad_accouncement_auct">🏷️【Auction】Second-hand deals available!</li>
+            <li id="id_main_ad_accouncement_secu">⚠️【Security】Beware of phishing, shop safely!</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- user info -->
+      <div class="col-md-3 d-flex flex-column" id="id_main_ad_user_info">
+        <div class="card w-100 equal-height">
+          <div class="card-body text-center">
+            {% if user.is_authenticated %}
+            <!-- Show user profile if available -->
+            {% if user.profile.picture %}
+            <img src="{{ user.profile.picture.url }}" class="rounded-circle mb-4" width="150" alt="User Profile"
+              id="id_main_ad_user_profile">
+            {% else %}
+            <img src="{% static 'images/user_profile.png' %}" class="rounded-circle mb-4" width="150" alt="User Profile"
+              id="id_main_ad_user_profile">
+            {% endif %}
+            <h5 class="card-title fs-3">Welcome, {{ user.username }}!</h5>
+            <a href="{% url 'my_profile' %}" class="btn btn-danger btn-sm">View Profile</a>
+            {% else %}
+            <img src="{% static 'images/user_profile.png' %}" class="rounded-circle mb-4" width="150" alt="User Profile"
+              id="id_main_ad_user_profile">
+            <h5 class="card-title fs-3">Welcome to TartanTrade!</h5>
+            <a href="{% url 'google_login' %}" class="btn btn-danger btn-sm" id="id_main_ad_user_login">Login</a>
+            {% endif %}
+          </div>
+          <br>
+          <br>
+        </div>
+
+        <!-- service -->
+        <div class="card mt-3 w-100" id="id_main_ad_service">
+          <div class="card-header fs-3">Service</div>
+          <div class="d-flex justify-content-around p-2">
+            <div class="text-center">
+              <i class="bi bi-truck fs-3 text-success"></i>
+              <p>Customer</p>
+            </div>
+            <div class="text-center">
+              <i class="bi bi-headset fs-3 text-primary"></i>
+              <p>Purchases</p>
+            </div>
+            <div class="text-center">
+              <i class="bi bi-heart fs-3 text-danger"></i>
+              <p>After-sales</p>
+            </div>
+          </div>
+          <div class="d-flex justify-content-around p-2">
+            <div class="text-center">
+              <i class="bi bi-truck fs-3 text-success"></i>
+              <p>Seller</p>
+            </div>
+            <div class="text-center">
+              <i class="bi bi-headset fs-3 text-primary"></i>
+              <p>Sale</p>
+            </div>
+            <div class="text-center">
+              <i class="bi bi-heart fs-3 text-danger"></i>
+              <p>Logistics</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  <br>
+
+  <!-- Search Results Display (if search was performed) -->
+  {% if is_search %}
+  <div class="container product-section main-content mt-4 mb-5" id="id_search_results">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="m-0">Search Results for "{{ query }}"</h2>
+      <span class="badge bg-secondary">{{ product_list|length }} item{% if product_list|length != 1 %}s{% endif %}
+        found</span>
+    </div>
+
+    {% if product_list %}
+    <div class="row">
+      {% for product in product_list %}
+      <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card h-100 shadow-sm hover-shadow">
+          {% if product.picture %}
+          <img src="{{ product.picture.url }}" class="card-img-top product-img" alt="{{ product.title }}"
+            style="height: 200px; object-fit: cover;">
+          {% else %}
+          <div class="bg-light text-center py-5">
+            <i class="bi bi-image text-secondary" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2">No Image</p>
+          </div>
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between">
+              <p class="badge bg-primary">{{ product.category }}</p>
+              <p class="badge bg-{% if product.condition == 'New' %}success{% else %}warning{% endif %}">
+                {{ product.condition }}
+              </p>
+            </div>
+            <h5 class="card-title">{{ product.title }}</h5>
+            <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatechars:80 }}</p>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+              <p class="card-text text-danger fw-bold fs-5 mb-0">${{ product.price }}</p>
+              <small class="text-muted">{{ product.upload_time|date:"M d, Y" }}</small>
+            </div>
+            <div class="d-flex mt-3">
+              <form method="post" action="{% url 'add_to_cart' item_id %}">
+                {% csrf_token %}
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-danger flex-grow-1 me-2">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if product_list|length > 12 %}
+    <div class="d-flex justify-content-center mt-4">
+      <a href="{% url 'product_list' %}?nav_top_search={{ query }}" class="btn btn-outline-danger">
+        View All Results
+      </a>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info text-center p-5">
+      <i class="bi bi-search" style="font-size: 3rem;"></i>
+      <h4 class="mt-3">No products found matching your search.</h4>
+      <p class="mb-3">Try different keywords or browse our categories.</p>
+      <div class="d-flex justify-content-center gap-3">
+        <a href="{% url 'home' %}?category=Electronics" class="btn btn-outline-primary">Electronics</a>
+        <a href="{% url 'home' %}?category=Books" class="btn btn-outline-primary">Books</a>
+        <a href="{% url 'home' %}?category=Furniture" class="btn btn-outline-primary">Furniture</a>
+        <a href="{% url 'home' %}?category=Grocery" class="btn btn-outline-primary">Grocery</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Category Results Display (if category was selected) -->
+  <!-- 类别筛选结果部分 -->
+  {% if selected_category and not is_search %}
+  <div class="container product-section main-content mt-4 mb-5" id="id_category_results">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="m-0">{{ selected_category }} Products</h2>
+      <span class="badge bg-secondary">{{ product_list|length }} item{% if product_list|length != 1 %}s{% endif %}
+        found</span>
+    </div>
+
+    {% if product_list %}
+    <div class="row">
+      {% for product in product_list %}
+      <!-- 产品卡片，与搜索结果部分相同 -->
+      <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <!-- 产品内容 -->
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+      No products found in this category.
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <br>
+
+
+  <div class="container product-section main-content" id="id_new_products">
+    <h2 class="text-center mt-4">Newly Posted Products</h2>
+
+    {% if new_products %}
+    <div class="row">
+      {% for product in new_products %}
+      <div class="col-md-2 mb-4">
+        <div class="card h-100">
+          {% if product.picture %}
+          <img src="{{ product.picture.url }}" class="card-img-top" alt="{{ product.title }}">
+          {% else %}
+          <div class="bg-light text-center py-4">No Image</div>
+          {% endif %}
+
+          <div class="card-body p-2">
+            <h6 class="card-title">{{ product.title|truncatechars:25 }}</h6>
+            <p class="card-text small">{{ product.description|truncatechars:50 }}</p>
+            <p class="card-text text-danger fw-bold mb-1">${{ product.price }}</p>
+
+            <!-- AJAX Add to Cart button -->
+            {% if not user.is_authenticated %}
+            <button class="btn btn-danger btn-sm w-100" onclick="showLoginAlert(); return false;">
+              {% else %}
+              <button class="btn btn-danger btn-sm w-100 add-to-cart-custom" data-product-id="{{ product.id }}">
+                {% endif %}
+                <i class="bi bi-cart-plus"></i> Add to Cart
+              </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">No products available yet.</div>
+    {% endif %}
+  </div>
+
+
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <!-- top slogan -->
+      <div class="footer-top">
+        <span class="text-danger">Wide Selection, Easy Shopping</span> |
+        <span class="text-danger">Authentic Products, Premium Service</span> |
+        <span class="text-danger">Everyday Low Prices, Hassle-Free Choices</span>
+      </div>
+
+      <!-- Logo -->
+      <div class="footer-logo-container">
+        <img src="{% static 'images/cmu_logo.png' %}" alt="CMU Logo" class="footer-logo">
+        <img src="{% static 'images/Logo.png' %}" alt="Tartan Logo" class="footer-logo">
+      </div>
+
+      <!-- third links -->
+      <div class="row text-center">
+        <div class="col-md-4">
+          <h6 class="fw-bold">Shopping Instructions</h6>
+          <p><a href="{% url 'shopping_instructions' %}">Shopping Process</a> | <a
+              href="{% url 'shopping_instructions' %}">Payment Methods</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Logistics</h6>
+          <p><a href="#">In-Person Exchange</a> | <a href="#">Self-Pickup</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Help Center</h6>
+          <p><a href="{% url 'help' %}">Common problems</a> | <a href="{% url 'help' %}">Account Privacy</a>
+        </div>
+      </div>
+
+      <!-- copyright -->
+      <div class="footer-bottom">
+        <div class="footer-links">
+          <a href="#">About Us</a> | <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+        </div>
+        <p>Copyright &copy; 2025 CMU Copyright</p>
+      </div>
+    </div>
+  </footer>
+
+
+
+
+  <!-- Add AJAX JavaScript for cart functionality at the bottom of the page before </body> -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Function to show login alert for non-authenticated users
+      window.showLoginAlert = function () {
+        alert('Please login to add items to your cart');
+      }
+
+      // Add click event listeners to all "Add to Cart" buttons
+      const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+
+      addToCartButtons.forEach(button => {
+        button.addEventListener('click', function (e) {
+          // Skip if user is not authenticated (the showLoginAlert will be triggered instead)
+          if (!this.hasAttribute('onclick')) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            const quantity = 1; // Default quantity
+
+            // Visual feedback - change button text while processing
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+            this.disabled = true;
+
+            // Send AJAX request - using the correct URL with item_id
+            fetch(`/cart/add/${productId}/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+              },
+              body: JSON.stringify({
+                item_id: productId,
+                quantity: quantity
+              })
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  // Show success message
+                  const messageContainer = document.getElementById('message-container');
+                  const alertDiv = document.createElement('div');
+                  alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                  alertDiv.setAttribute('role', 'alert');
+                  alertDiv.innerHTML = `
+                  Item added to cart successfully!
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                  messageContainer.appendChild(alertDiv);
+
+                  // Auto dismiss the alert after 3 seconds
+                  setTimeout(() => {
+                    alertDiv.classList.remove('show');
+                    setTimeout(() => alertDiv.remove(), 150);
+                  }, 3000);
+
+                  // Reset button
+                  this.innerHTML = 'Add to Cart';
+                  this.disabled = false;
+
+                  // Optional: Update cart count in the UI if needed
+                  // const cartCountElement = document.getElementById('id_nav_top_search_cart_num');
+                  // if (cartCountElement) {
+                  //   cartCountElement.textContent = data.cart_count;
+                  // }
+                } else {
+                  // Show error message
+                  const messageContainer = document.getElementById('message-container');
+                  const alertDiv = document.createElement('div');
+                  alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                  alertDiv.setAttribute('role', 'alert');
+                  alertDiv.innerHTML = `
+                  Error: ${data.error || 'Could not add item to cart'}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                  messageContainer.appendChild(alertDiv);
+
+                  // Reset button
+                  this.innerHTML = 'Add to Cart';
+                  this.disabled = false;
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                // Reset button on error
+                this.innerHTML = 'Add to Cart';
+                this.disabled = false;
+
+                // Show error message
+                const messageContainer = document.getElementById('message-container');
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.innerHTML = `
+                An error occurred. Please try again.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              `;
+                messageContainer.appendChild(alertDiv);
+              });
+          }
+        });
+      });
+
+      document.querySelectorAll('.add-to-cart-custom').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const productId = this.dataset.productId;
+          fetch('/cart/toggle/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ product_id: productId })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'added') {
+                alert("Added to your cart successfully!");
+              } else if (data.status === 'removed') {
+                alert("Removed from cart.");
+              } else {
+                alert("Something went wrong.");
+              }
+            })
+            .catch(error => console.error("Error:", error));
+        });
+      });
+    });
+  </script>
+
+  <script src="{% static 'tartantrade/bootstrap.bundle.min.js' %}"></script>
+</body>
+
+</html>

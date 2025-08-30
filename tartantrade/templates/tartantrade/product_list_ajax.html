@@ -1,0 +1,889 @@
+<!-- templates/tartantrade/product_list_ajax.html -->
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Product List - TartanTrade</title>
+  <link rel="stylesheet" href="{% static 'tartantrade/base.css' %}">
+  <link rel="stylesheet" href="{% static 'tartantrade/bootstrap.min.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .product-card {
+      transition: transform 0.3s;
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .product-img-container {
+      height: 200px;
+      overflow: hidden;
+    }
+    .product-img {
+      object-fit: cover;
+      height: 100%;
+      width: 100%;
+    }
+    .filter-sidebar {
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      padding: 20px;
+    }
+    .price-range {
+      display: flex;
+      gap: 10px;
+    }
+    .category-filter {
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+
+
+<body class="{% if enable_realtime_updates %}enable-realtime-updates{% endif %}">
+  <!-- top navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light py-1 border">
+    <div class="container">
+      <!-- Left Nav -->
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'home' %}">
+            <img src="https://img.icons8.com/ios/50/home--v1.png" height="16" alt="Home">
+            TartanTrade
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right Nav -->
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <span class="nav-link">
+          Hi!
+          {% if user.is_authenticated %}
+          <span class="text-success">{{ user.username }}</span>
+          {% else %}
+          <a href="{% url 'google_login' %}" class="text-danger">Login</a>
+          {% endif %}
+          </span>
+        </li>
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            My Account
+          </a>
+          <ul class="dropdown-menu">
+            {% if user.is_authenticated %}
+              <li><a class="dropdown-item" href="{% url 'my_profile' %}">My Profile</a></li>
+              <li><a class="dropdown-item" href="{% url 'my_orders' %}">My Orders</a></li>
+              <li><a class="dropdown-item" href="{% url 'my_products' %}">My Products</a></li>
+              <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+            {% else %}
+              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Profile</a></li>
+              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Orders</a></li>
+              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Products</a></li>
+              <li><a class="dropdown-item" href="{% url 'google_login' %}">Login</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'help' %}">Help</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- top search navigation -->
+  <nav class="container-fluid bg-light py-3 border">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-lg-3 col-md-3 col-sm-12 text-center">
+        <a href="{% url 'home' %}" class="d-flex align-items-center justify-content-center text-decoration-none">
+          <img src="{% static 'images/Logo.png' %}" alt="Tartan Logo" height="70">
+          <span class="fs-2 fw-bold text-danger ms-2">TartanTrade</span>
+        </a>
+      </div>
+
+      <div class="col-lg-6 col-md-6 col-sm-12">
+        <!-- 顶部搜索表单 -->
+        <form class="d-flex top-search-form" id="top-search-form">
+          <input type="text" class="form-control border border-danger fs-4 py-3" placeholder="Search" name="nav_top_search" value="{{ search_query }}">
+          <button class="btn btn-danger fs-4 px-4" type="submit">Search</button>
+        </form>
+      </div>
+
+      <div class="col-lg-3 col-md-3 text-center">
+        {% if user.is_authenticated %}
+          <a href="{% url 'cart_view' %}" class="text-danger text-decoration-none position-relative d-inline-block">
+        {% else %}
+          <a href="{% url 'home' %}" onclick="showLoginAlert(); return false;" class="text-danger text-decoration-none position-relative d-inline-block">
+        {% endif %}
+          <i class="bi bi-cart fs-2 text-danger"></i>
+          <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {% if request.session.cart %}{{ request.session.cart|length }}{% else %}0{% endif %}
+          </span>
+        </a>
+          </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 消息容器 -->
+  <div class="container mt-3" id="message-container">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if error_message %}
+      <div class="alert alert-danger alert-dismissible fade show">
+        {{ error_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="container my-5">
+    <div class="row">
+      <!-- 侧边筛选栏 -->
+      <div class="col-md-3 mb-4">
+        <div class="filter-sidebar">
+          <h4 class="mb-4">Filters</h4>
+
+          <form id="filter-form">
+            <div class="category-filter">
+              <h5 class="mb-3">Categories</h5>
+              <div class="form-check mb-2">
+                <input class="form-check-input category-radio" type="radio" name="category" value="All" id="allCheck" {% if not selected_category or selected_category == 'All' %}checked{% endif %}>
+                <label class="form-check-label" for="allCheck">
+                  All Categories
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input category-radio" type="radio" name="category" value="Electronics" id="electronicsCheck" {% if selected_category == 'Electronics' %}checked{% endif %}>
+                <label class="form-check-label" for="electronicsCheck">
+                  Electronics
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input category-radio" type="radio" name="category" value="Books" id="booksCheck" {% if selected_category == 'Books' %}checked{% endif %}>
+                <label class="form-check-label" for="booksCheck">
+                  Books
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input category-radio" type="radio" name="category" value="Furniture" id="furnitureCheck" {% if selected_category == 'Furniture' %}checked{% endif %}>
+                <label class="form-check-label" for="furnitureCheck">
+                  Furniture
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input category-radio" type="radio" name="category" value="Grocery" id="groceryCheck" {% if selected_category == 'Grocery' %}checked{% endif %}>
+                <label class="form-check-label" for="groceryCheck">
+                  Grocery
+                </label>
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <h5 class="mb-3">Price Range</h5>
+              <div class="price-range">
+                <input type="number" class="form-control" placeholder="Min" name="min_price" min="0" value="{{ min_price|default_if_none:'' }}">
+                <input type="number" class="form-control" placeholder="Max" name="max_price" min="0" value="{{ max_price|default_if_none:'' }}">
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <h5 class="mb-3">Condition</h5>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="condition" value="New" id="newCheck"
+                       {% if "New" in selected_conditions %}checked{% endif %}>
+                <label class="form-check-label" for="newCheck">
+                  New
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="condition" value="Used - Like New" id="likeNewCheck" {% if 'Used - Like New' in selected_conditions %}checked{% endif %}>
+                <label class="form-check-label" for="likeNewCheck">
+                  Used - Like New
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="condition" value="Used - Good" id="goodCheck" {% if 'Used - Good' in selected_conditions %}checked{% endif %}>
+                <label class="form-check-label" for="goodCheck">
+                  Used - Good
+                </label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="condition" value="Used - Fair" id="fairCheck" {% if 'Used - Fair' in selected_conditions %}checked{% endif %}>
+                <label class="form-check-label" for="fairCheck">
+                  Used - Fair
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100">Apply Filters</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 产品列表 -->
+      <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="product-list-title">
+            {% if search_query %}
+              Search results for "{{ search_query }}"
+              {% if selected_category and selected_category != 'All' %}in {{ selected_category }}{% endif %}
+            {% else %}
+              {% if selected_category and selected_category != 'All' %}{{ selected_category }} Products{% else %}All Products{% endif %}
+            {% endif %}
+          </h2>
+
+          <!-- 排序下拉菜单 -->
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              Sort By: {% if sort_by == 'newest' %}Newest First{% elif sort_by == 'price_low' %}Price: Low to High{% elif sort_by == 'price_high' %}Price: High to Low{% else %}Default{% endif %}
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+              <li><a class="dropdown-item sort-dropdown-item" href="#" data-sort="newest">Newest First</a></li>
+              <li><a class="dropdown-item sort-dropdown-item" href="#" data-sort="price_low">Price: Low to High</a></li>
+              <li><a class="dropdown-item sort-dropdown-item" href="#" data-sort="price_high">Price: High to Low</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <span class="badge bg-secondary"><span id="total-products-count">{{ total_products|default:0 }}</span> <span id="items-text">item{% if total_products != 1 %}s{% endif %}</span> found</span>
+
+          {% if search_query or selected_category != 'All' or min_price or max_price or selected_conditions %}
+            <button id="clear-filters-btn" class="btn btn-sm btn-outline-secondary ms-2">Clear All Filters</button>
+          {% endif %}
+        </div>
+
+        <!-- 加载中状态 -->
+        <div id="loading-spinner" class="text-center py-5 d-none">
+          <div class="spinner-border text-danger" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3">Loading products...</p>
+        </div>
+
+        <!-- 产品列表容器 -->
+        <div id="products-container">
+          {% if product_list %}
+            <div class="row">
+              {% for product in product_list %}
+                <div class="col-md-4 mb-4">
+                  <div class="card product-card h-100">
+                    <div class="product-img-container">
+                      {% if product.picture %}
+                        <img src="{{ product.picture.url }}" class="product-img" alt="{{ product.title }}">
+                      {% else %}
+                        <div class="bg-light text-center py-5 h-100">No Image</div>
+                      {% endif %}
+                    </div>
+                    <div class="card-body">
+                      <h5 class="card-title">{{ product.title }}</h5>
+                      <p class="card-text text-muted small">{{ product.category }}</p>
+                      <p class="card-text">{{ product.description|truncatechars:100 }}</p>
+                      <div class="d-flex justify-content-between align-items-center mt-3">
+                        <span class="text-danger fw-bold fs-5">${{ product.price }}</span>
+                        <span class="badge bg-light text-dark border">{{ product.condition }}</span>
+                      </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                      <div class="d-grid">
+                        {% if user.is_authenticated %}
+                          <button class="btn btn-danger w-100 add-to-cart-btn" data-product-id="{{ product.id }}">
+                            <i class="bi bi-cart-plus"></i> Add to Cart
+                          </button>
+                        {% else %}
+                          <button class="btn btn-danger" onclick="showLoginAlert()">Add to Cart</button>
+                        {% endif %}
+                      </div>
+
+                      <div class="d-grid mt-2">
+                        {% if user.is_authenticated %}
+                          <button class="btn btn-outline-danger w-100 add-to-wishlist-btn" data-product-id="{{ product.id }}">
+                            <i class="bi bi-heart"></i> Add to Wishlist
+                          </button>
+                        {% else %}
+                          <button class="btn btn-outline-danger w-100" onclick="showLoginAlert()">
+                            <i class="bi bi-heart"></i> Add to Wishlist
+                          </button>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- 无产品消息 -->
+        <div id="no-products-message" class="alert alert-info py-4 text-center {% if product_list %}d-none{% endif %}">
+          <i class="bi bi-exclamation-circle fs-1 d-block mb-3"></i>
+          <h4>No Products Found</h4>
+          <p class="mb-0">Sorry, we couldn't find any products matching your criteria. Try adjusting your filters or search terms.</p>
+          <div class="text-center mt-4">
+            <button id="clear-all-filters" class="btn btn-outline-danger">Clear All Filters</button>
+          </div>
+        </div>
+
+        <!-- 分页容器 -->
+        <div id="pagination-container">
+          {% if product_list and product_list.paginator.num_pages >= 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+              <ul class="pagination justify-content-center">
+                {% if product_list.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="#" data-page="1" aria-label="First">
+                      <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="#" data-page="{{ product_list.previous_page_number }}" aria-label="Previous">
+                      <span aria-hidden="true">&laquo;</span>
+                    </a>
+                  </li>
+                {% endif %}
+
+                {% for i in product_list.paginator.page_range %}
+                  {% if i <= 5 or i >= product_list.paginator.num_pages|add:-4 or i >= product_list.number|add:-2 and i <= product_list.number|add:2 %}
+                    <li class="page-item {% if product_list.number == i %}active{% endif %}">
+                      <a class="page-link" href="#" data-page="{{ i }}">{{ i }}</a>
+                    </li>
+                  {% elif i == 6 or i == product_list.paginator.num_pages|add:-5 %}
+                    <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                  {% endif %}
+                {% endfor %}
+
+                {% if product_list.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="#" data-page="{{ product_list.next_page_number }}" aria-label="Next">
+                      <span aria-hidden="true">&raquo;</span>
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="#" data-page="{{ product_list.paginator.num_pages }}" aria-label="Last">
+                      <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer bg-light mt-5 py-5 border-top">
+    <div class="container">
+      <!-- top slogan -->
+      <div class="text-center mb-4">
+        <span class="text-danger mx-2">Wide Selection, Easy Shopping</span> |
+        <span class="text-danger mx-2">Authentic Products, Premium Service</span> |
+        <span class="text-danger mx-2">Everyday Low Prices, Hassle-Free Choices</span>
+      </div>
+
+      <!-- Logo -->
+      <div class="d-flex justify-content-center mb-4">
+        <img src="{% static 'images/cmu_logo.png' %}" alt="CMU Logo" class="mx-3" height="50">
+        <img src="{% static 'images/Logo.png' %}" alt="Tartan Logo" class="mx-3" height="50">
+      </div>
+
+      <!-- third links -->
+      <div class="row text-center mb-4">
+        <div class="col-md-4">
+          <h6 class="fw-bold">Shopping Instructions</h6>
+          <p><a href="{% url 'shopping_instructions' %}" class="text-decoration-none">Shopping Process</a> | <a href="{% url 'shopping_instructions' %}" class="text-decoration-none">Payment Methods</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Logistics</h6>
+          <p><a href="#" class="text-decoration-none">In-Person Exchange</a> | <a href="#" class="text-decoration-none">Self-Pickup</a></p>
+        </div>
+        <div class="col-md-4">
+          <h6 class="fw-bold">Help Center</h6>
+          <p><a href="{% url 'help' %}" class="text-decoration-none">Common problems</a> | <a href="{% url 'help' %}" class="text-decoration-none">Account Privacy</a>
+        </div>
+      </div>
+
+      <!-- copyright -->
+      <div class="text-center">
+        <div class="mb-2">
+          <a href="#" class="text-decoration-none mx-2">About Us</a> | <a href="{% url 'privacy_policy' %}" class="text-decoration-none mx-2">Privacy Policy</a>
+        </div>
+        <p class="text-muted">Copyright &copy; 2025 CMU Copyright</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'tartantrade/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'tartantrade/product_list_ajax.js' %}"></script>
+</body>
+</html>
+
+
+
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--{% load static %}-->
+<!--<head>-->
+<!--  <meta charset="UTF-8">-->
+<!--  <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--  <title>Product List - TartanTrade</title>-->
+<!--  <link rel="stylesheet" href="{% static 'tartantrade/base.css' %}">-->
+<!--  <link rel="stylesheet" href="{% static 'tartantrade/bootstrap.min.css' %}">-->
+<!--  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">-->
+<!--  <style>-->
+<!--    .product-card {-->
+<!--      transition: transform 0.3s;-->
+<!--    }-->
+<!--    .product-card:hover {-->
+<!--      transform: translateY(-5px);-->
+<!--      box-shadow: 0 10px 20px rgba(0,0,0,0.1);-->
+<!--    }-->
+<!--    .product-img-container {-->
+<!--      height: 200px;-->
+<!--      overflow: hidden;-->
+<!--    }-->
+<!--    .product-img {-->
+<!--      object-fit: cover;-->
+<!--      height: 100%;-->
+<!--      width: 100%;-->
+<!--    }-->
+<!--    .filter-sidebar {-->
+<!--      background-color: #f8f9fa;-->
+<!--      border-radius: 5px;-->
+<!--      padding: 20px;-->
+<!--    }-->
+<!--    .price-range {-->
+<!--      display: flex;-->
+<!--      gap: 10px;-->
+<!--    }-->
+<!--    .category-filter {-->
+<!--      margin-bottom: 15px;-->
+<!--    }-->
+<!--  </style>-->
+<!--</head>-->
+
+<!--<body>-->
+<!--  &lt;!&ndash; top navigation &ndash;&gt;-->
+<!--  <nav class="navbar navbar-expand-lg navbar-light bg-light py-1 border">-->
+<!--    <div class="container">-->
+<!--      &lt;!&ndash; Left Nav &ndash;&gt;-->
+<!--      <ul class="navbar-nav me-auto">-->
+<!--        <li class="nav-item">-->
+<!--          <a class="nav-link" href="{% url 'home' %}">-->
+<!--            <img src="https://img.icons8.com/ios/50/home&#45;&#45;v1.png" height="16" alt="Home">-->
+<!--            TartanTrade-->
+<!--          </a>-->
+<!--        </li>-->
+<!--      </ul>-->
+
+<!--      &lt;!&ndash; Right Nav &ndash;&gt;-->
+<!--      <ul class="navbar-nav">-->
+<!--        <li class="nav-item">-->
+<!--          <span class="nav-link">-->
+<!--          Hi!-->
+<!--          {% if user.is_authenticated %}-->
+<!--          <span class="text-success">{{ user.username }}</span>-->
+<!--          {% else %}-->
+<!--          <a href="{% url 'google_login' %}" class="text-danger">Login</a>-->
+<!--          {% endif %}-->
+<!--          </span>-->
+<!--        </li>-->
+
+<!--        <li class="nav-item dropdown">-->
+<!--          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">-->
+<!--            My Account-->
+<!--          </a>-->
+<!--          <ul class="dropdown-menu">-->
+<!--            {% if user.is_authenticated %}-->
+<!--              <li><a class="dropdown-item" href="{% url 'my_profile' %}">My Profile</a></li>-->
+<!--              <li><a class="dropdown-item" href="{% url 'my_orders' %}">My Orders</a></li>-->
+<!--              <li><a class="dropdown-item" href="{% url 'my_products' %}">My Products</a></li>-->
+<!--              <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>-->
+<!--            {% else %}-->
+<!--              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Profile</a></li>-->
+<!--              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Orders</a></li>-->
+<!--              <li><a class="dropdown-item" href="{% url 'home' %}" onclick="showLoginAlert(); return false;">My Products</a></li>-->
+<!--              <li><a class="dropdown-item" href="{% url 'google_login' %}">Login</a></li>-->
+<!--            {% endif %}-->
+<!--          </ul>-->
+<!--        </li>-->
+<!--        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>-->
+<!--        <li class="nav-item"><a class="nav-link" href="{% url 'help' %}">Help</a></li>-->
+<!--      </ul>-->
+<!--    </div>-->
+<!--  </nav>-->
+
+<!--  &lt;!&ndash; top search navigation &ndash;&gt;-->
+<!--  <nav class="container-fluid bg-light py-3 border">-->
+<!--    <div class="row align-items-center justify-content-between">-->
+<!--      <div class="col-lg-3 col-md-3 col-sm-12 text-center">-->
+<!--        <a href="{% url 'home' %}" class="d-flex align-items-center justify-content-center text-decoration-none">-->
+<!--          <img src="{% static 'images/Logo.png' %}" alt="Tartan Logo" height="70">-->
+<!--          <span class="fs-2 fw-bold text-danger ms-2">TartanTrade</span>-->
+<!--        </a>-->
+<!--      </div>-->
+
+<!--      <div class="col-lg-6 col-md-6 col-sm-12">-->
+<!--        &lt;!&ndash; 顶部搜索表单 - 始终以新搜索覆盖先前搜索 &ndash;&gt;-->
+<!--        <form class="d-flex" action="{% url 'product_list' %}" method="get" id="top-search-form">-->
+<!--          &lt;!&ndash; 保留筛选条件但不保留之前的搜索词 &ndash;&gt;-->
+<!--          {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}-->
+<!--          {% if min_price %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}-->
+<!--          {% if max_price %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}-->
+<!--          {% for condition in selected_conditions %}-->
+<!--            <input type="hidden" name="condition" value="{{ condition }}">-->
+<!--          {% endfor %}-->
+<!--          {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}-->
+
+<!--          <input type="text" class="form-control border border-danger fs-4 py-3" placeholder="Search" name="nav_top_search" value="{{ search_query }}">-->
+<!--          <button class="btn btn-danger fs-4 px-4" type="submit">Search</button>-->
+<!--        </form>-->
+<!--      </div>-->
+
+<!--      <div class="col-lg-3 col-md-3 text-center">-->
+<!--        {% if user.is_authenticated %}-->
+<!--          <a href="{% url 'cart_view' %}" class="text-danger text-decoration-none position-relative d-inline-block">-->
+<!--        {% else %}-->
+<!--          <a href="{% url 'home' %}" onclick="showLoginAlert(); return false;" class="text-danger text-decoration-none position-relative d-inline-block">-->
+<!--        {% endif %}-->
+<!--          <i class="bi bi-cart fs-2 text-danger"></i>-->
+<!--          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">-->
+<!--            {% if request.session.cart %}{{ request.session.cart|length }}{% else %}0{% endif %}-->
+<!--          </span>-->
+<!--        </a>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </nav>-->
+
+<!--  &lt;!&ndash; 显示消息区域 &ndash;&gt;-->
+<!--  <div class="container mt-3">-->
+<!--    {% if messages %}-->
+<!--      {% for message in messages %}-->
+<!--        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show">-->
+<!--          {{ message }}-->
+<!--          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--        </div>-->
+<!--      {% endfor %}-->
+<!--    {% endif %}-->
+
+<!--    {% if error_message %}-->
+<!--      <div class="alert alert-danger alert-dismissible fade show">-->
+<!--        {{ error_message }}-->
+<!--        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--      </div>-->
+<!--    {% endif %}-->
+<!--  </div>-->
+
+<!--  <div class="container my-5">-->
+<!--    <div class="row">-->
+<!--      &lt;!&ndash; 侧边筛选栏 &ndash;&gt;-->
+<!--      <div class="col-md-3 mb-4">-->
+<!--        <div class="filter-sidebar">-->
+<!--          <h4 class="mb-4">Filters</h4>-->
+
+<!--          <form action="{% url 'product_list' %}" method="get" id="filter-form">-->
+<!--            &lt;!&ndash; 类别选择区域 &ndash;&gt;-->
+<!--            <div class="category-filter">-->
+<!--              <h5 class="mb-3">Categories</h5>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input category-radio" type="radio" name="category" value="All" id="allCheck"-->
+<!--                       {% if not selected_category or selected_category == 'All' %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="allCheck">-->
+<!--                  All Categories-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input category-radio" type="radio" name="category" value="Electronics" id="electronicsCheck"-->
+<!--                       {% if selected_category == 'Electronics' %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="electronicsCheck">-->
+<!--                  Electronics-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input category-radio" type="radio" name="category" value="Books" id="booksCheck"-->
+<!--                       {% if selected_category == 'Books' %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="booksCheck">-->
+<!--                  Books-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input category-radio" type="radio" name="category" value="Furniture" id="furnitureCheck"-->
+<!--                       {% if selected_category == 'Furniture' %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="furnitureCheck">-->
+<!--                  Furniture-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input category-radio" type="radio" name="category" value="Grocery" id="groceryCheck"-->
+<!--                       {% if selected_category == 'Grocery' %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="groceryCheck">-->
+<!--                  Grocery-->
+<!--                </label>-->
+<!--              </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; 价格范围筛选 &ndash;&gt;-->
+<!--            <div class="mb-4">-->
+<!--              <h5 class="mb-3">Price Range</h5>-->
+<!--              <div class="price-range">-->
+<!--                <input type="number" class="form-control" placeholder="Min" name="min_price" min="0" value="{{ min_price|default_if_none:'' }}">-->
+<!--                <input type="number" class="form-control" placeholder="Max" name="max_price" min="0" value="{{ max_price|default_if_none:'' }}">-->
+<!--              </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; 商品状态筛选 &ndash;&gt;-->
+<!--            <div class="mb-4">-->
+<!--              <h5 class="mb-3">Condition</h5>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input" type="checkbox" name="condition" value="New" id="newCheck" {% if 'New' in selected_conditions %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="newCheck">-->
+<!--                  New-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input" type="checkbox" name="condition" value="Used - Like New" id="likeNewCheck" {% if 'Used - Like New' in selected_conditions %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="likeNewCheck">-->
+<!--                  Used - Like New-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input" type="checkbox" name="condition" value="Used - Good" id="goodCheck" {% if 'Used - Good' in selected_conditions %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="goodCheck">-->
+<!--                  Used - Good-->
+<!--                </label>-->
+<!--              </div>-->
+<!--              <div class="form-check mb-2">-->
+<!--                <input class="form-check-input" type="checkbox" name="condition" value="Used - Fair" id="fairCheck" {% if 'Used - Fair' in selected_conditions %}checked{% endif %}>-->
+<!--                <label class="form-check-label" for="fairCheck">-->
+<!--                  Used - Fair-->
+<!--                </label>-->
+<!--              </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; 保留当前排序方式 &ndash;&gt;-->
+<!--            {% if sort_by %}-->
+<!--              <input type="hidden" name="sort" value="{{ sort_by }}">-->
+<!--            {% endif %}-->
+
+<!--            &lt;!&ndash; 保留搜索查询 - 只有当不是切换类别时才保留 &ndash;&gt;-->
+<!--            <div id="search-query-container">-->
+<!--              {% if search_query %}-->
+<!--                <input type="hidden" name="nav_top_search" value="{{ search_query }}" id="filter-search-query">-->
+<!--              {% endif %}-->
+<!--            </div>-->
+
+<!--            <button type="submit" class="btn btn-danger w-100">Apply Filters</button>-->
+<!--          </form>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; 产品列表 &ndash;&gt;-->
+<!--      <div class="col-md-9">-->
+<!--        <div class="d-flex justify-content-between align-items-center mb-4">-->
+<!--          <h2>-->
+<!--            {% if search_query %}-->
+<!--              Search results for "{{ search_query }}"-->
+<!--              {% if selected_category and selected_category != 'All' %}in {{ selected_category }}{% endif %}-->
+<!--            {% else %}-->
+<!--              {% if selected_category and selected_category != 'All' %}{{ selected_category }} Products{% else %}All Products{% endif %}-->
+<!--            {% endif %}-->
+<!--          </h2>-->
+
+<!--          &lt;!&ndash; 排序下拉菜单 &ndash;&gt;-->
+<!--          <div class="dropdown">-->
+<!--            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">-->
+<!--              Sort By: {% if sort_by == 'newest' %}Newest First{% elif sort_by == 'price_low' %}Price: Low to High{% elif sort_by == 'price_high' %}Price: High to Low{% else %}Default{% endif %}-->
+<!--            </button>-->
+<!--            <ul class="dropdown-menu" aria-labelledby="sortDropdown">-->
+<!--              <li><a class="dropdown-item" href="?{% if search_query %}nav_top_search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% for condition in selected_conditions %}condition={{ condition }}&{% endfor %}sort=newest">Newest First</a></li>-->
+<!--              <li><a class="dropdown-item" href="?{% if search_query %}nav_top_search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% for condition in selected_conditions %}condition={{ condition }}&{% endfor %}sort=price_low">Price: Low to High</a></li>-->
+<!--              <li><a class="dropdown-item" href="?{% if search_query %}nav_top_search={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% for condition in selected_conditions %}condition={{ condition }}&{% endfor %}sort=price_high">Price: High to Low</a></li>-->
+<!--            </ul>-->
+<!--          </div>-->
+<!--        </div>-->
+
+<!--        <div class="mb-3">-->
+<!--          <span class="badge bg-secondary">{{ total_products|default:0 }} item{% if total_products != 1 %}s{% endif %} found</span>-->
+
+<!--          {% if search_query or selected_category != 'All' or min_price or max_price or selected_conditions %}-->
+<!--            <a href="{% url 'product_list' %}" class="btn btn-sm btn-outline-secondary ms-2">Clear All Filters</a>-->
+<!--          {% endif %}-->
+<!--        </div>-->
+
+<!--        {% if product_list %}-->
+<!--          <div class="row">-->
+<!--            {% for product in product_list %}-->
+<!--              <div class="col-md-4 mb-4">-->
+<!--                <div class="card product-card h-100">-->
+<!--                  <div class="product-img-container">-->
+<!--                    {% if product.picture %}-->
+<!--                      <img src="{{ product.picture.url }}" class="product-img" alt="{{ product.title }}">-->
+<!--                    {% else %}-->
+<!--                      <div class="bg-light text-center py-5 h-100">No Image</div>-->
+<!--                    {% endif %}-->
+<!--                  </div>-->
+<!--                  <div class="card-body">-->
+<!--                    <h5 class="card-title">{{ product.title }}</h5>-->
+<!--                    <p class="card-text text-muted small">{{ product.category }}</p>-->
+<!--                    <p class="card-text">{{ product.description|truncatechars:100 }}</p>-->
+<!--                    <div class="d-flex justify-content-between align-items-center mt-3">-->
+<!--                      <span class="text-danger fw-bold fs-5">${{ product.price }}</span>-->
+<!--                      <span class="badge bg-light text-dark border">{{ product.condition }}</span>-->
+<!--                    </div>-->
+<!--                  </div>-->
+<!--                  <div class="card-footer bg-white border-top-0">-->
+<!--                    <div class="d-grid">-->
+<!--                      {% if user.is_authenticated %}-->
+<!--                        <form method="post" action="{% url 'add_to_cart' product.id %}">-->
+<!--                          {% csrf_token %}-->
+<!--                          <input type="hidden" name="quantity" value="1">-->
+<!--                          <button type="submit" class="btn btn-danger w-100">-->
+<!--                            <i class="bi bi-cart-plus"></i> Add to Cart-->
+<!--                          </button>-->
+<!--                        </form>-->
+<!--                      {% else %}-->
+<!--                        <button class="btn btn-danger" onclick="showLoginAlert()">Add to Cart</button>-->
+<!--                      {% endif %}-->
+<!--                    </div>-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            {% endfor %}-->
+<!--          </div>-->
+
+<!--          &lt;!&ndash; 分页导航 &ndash;&gt;-->
+<!--          <nav aria-label="Page navigation" class="mt-4">-->
+<!--            <ul class="pagination justify-content-center">-->
+<!--              {% if product_list.has_previous %}-->
+<!--                <li class="page-item">-->
+<!--                  <a class="page-link" href="?page=1{% if search_query %}&nav_top_search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% for condition in selected_conditions %}&condition={{ condition }}{% endfor %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" aria-label="First">-->
+<!--                    <span aria-hidden="true">&laquo;&laquo;</span>-->
+<!--                  </a>-->
+<!--                </li>-->
+<!--                <li class="page-item">-->
+<!--                  <a class="page-link" href="?page={{ product_list.previous_page_number }}{% if search_query %}&nav_top_search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% for condition in selected_conditions %}&condition={{ condition }}{% endfor %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" aria-label="Previous">-->
+<!--                    <span aria-hidden="true">&laquo;</span>-->
+<!--                  </a>-->
+<!--                </li>-->
+<!--              {% endif %}-->
+
+<!--              {% for i in product_list.paginator.page_range %}-->
+<!--                {% if i <= 5 or i >= product_list.paginator.num_pages|add:-4 or i >= product_list.number|add:-2 and i <= product_list.number|add:2 %}-->
+<!--                  <li class="page-item {% if product_list.number == i %}active{% endif %}">-->
+<!--                    <a class="page-link" href="?page={{ i }}{% if search_query %}&nav_top_search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% for condition in selected_conditions %}&condition={{ condition }}{% endfor %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ i }}</a>-->
+<!--                  </li>-->
+<!--                {% elif i == 6 or i == product_list.paginator.num_pages|add:-5 %}-->
+<!--                  <li class="page-item disabled"><a class="page-link" href="#">...</a></li>-->
+<!--                {% endif %}-->
+<!--              {% endfor %}-->
+
+<!--              {% if product_list.has_next %}-->
+<!--                <li class="page-item">-->
+<!--                  <a class="page-link" href="?page={{ product_list.next_page_number }}{% if search_query %}&nav_top_search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% for condition in selected_conditions %}&condition={{ condition }}{% endfor %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" aria-label="Next">-->
+<!--                    <span aria-hidden="true">&raquo;</span>-->
+<!--                  </a>-->
+<!--                </li>-->
+<!--                <li class="page-item">-->
+<!--                  <a class="page-link" href="?page={{ product_list.paginator.num_pages }}{% if search_query %}&nav_top_search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% for condition in selected_conditions %}&condition={{ condition }}{% endfor %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" aria-label="Last">-->
+<!--                    <span aria-hidden="true">&raquo;&raquo;</span>-->
+<!--                  </a>-->
+<!--                </li>-->
+<!--              {% endif %}-->
+<!--            </ul>-->
+<!--          </nav>-->
+
+<!--        {% else %}-->
+<!--          <div class="alert alert-info py-4 text-center">-->
+<!--            <i class="bi bi-exclamation-circle fs-1 d-block mb-3"></i>-->
+<!--            <h4>No Products Found</h4>-->
+<!--            <p class="mb-0">Sorry, we couldn't find any products matching your criteria. Try adjusting your filters or search terms.</p>-->
+<!--          </div>-->
+<!--          <div class="text-center mt-4">-->
+<!--            <a href="{% url 'home' %}" class="btn btn-outline-danger">Return to Home</a>-->
+<!--          </div>-->
+<!--        {% endif %}-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+
+<!--  &lt;!&ndash; Footer &ndash;&gt;-->
+<!--  <footer class="footer bg-light mt-5 py-5 border-top">-->
+<!--    <div class="container">-->
+<!--      &lt;!&ndash; top slogan &ndash;&gt;-->
+<!--      <div class="text-center mb-4">-->
+<!--        <span class="text-danger mx-2">Wide Selection, Easy Shopping</span> |-->
+<!--        <span class="text-danger mx-2">Authentic Products, Premium Service</span> |-->
+<!--        <span class="text-danger mx-2">Everyday Low Prices, Hassle-Free Choices</span>-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; Logo &ndash;&gt;-->
+<!--      <div class="d-flex justify-content-center mb-4">-->
+<!--        <img src="{% static 'images/cmu_logo.png' %}" alt="CMU Logo" class="mx-3" height="50">-->
+<!--        <img src="{% static 'images/Logo.png' %}" alt="Tartan Logo" class="mx-3" height="50">-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; third links &ndash;&gt;-->
+<!--      <div class="row text-center mb-4">-->
+<!--        <div class="col-md-4">-->
+<!--          <h6 class="fw-bold">Shopping Instructions</h6>-->
+<!--          <p><a href="{% url 'shopping_instructions' %}" class="text-decoration-none">Shopping Process</a> | <a href="{% url 'shopping_instructions' %}" class="text-decoration-none">Payment Methods</a></p>-->
+<!--        </div>-->
+<!--        <div class="col-md-4">-->
+<!--          <h6 class="fw-bold">Logistics</h6>-->
+<!--          <p><a href="#" class="text-decoration-none">In-Person Exchange</a> | <a href="#" class="text-decoration-none">Self-Pickup</a></p>-->
+<!--        </div>-->
+<!--        <div class="col-md-4">-->
+<!--          <h6 class="fw-bold">Help Center</h6>-->
+<!--          <p><a href="{% url 'help' %}" class="text-decoration-none">Common problems</a> | <a href="{% url 'help' %}" class="text-decoration-none">Account Privacy</a>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; copyright &ndash;&gt;-->
+<!--      <div class="text-center">-->
+<!--        <div class="mb-2">-->
+<!--          <a href="#" class="text-decoration-none mx-2">About Us</a> | <a href="{% url 'privacy_policy' %}" class="text-decoration-none mx-2">Privacy Policy</a>-->
+<!--        </div>-->
+<!--        <p class="text-muted">Copyright &copy; 2025 CMU Copyright</p>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </footer>-->
+
+<!--  <script src="{% static 'tartantrade/bootstrap.bundle.min.js' %}"></script>-->
+<!--  <script>-->
+<!--    // 登录提醒函数-->
+<!--    function showLoginAlert() {-->
+<!--      alert("Please login to access this feature!");-->
+<!--    }-->
+
+<!--    // 当选择新类别时，移除搜索词-->
+<!--    document.addEventListener('DOMContentLoaded', function() {-->
+<!--      const categoryRadios = document.querySelectorAll('.category-radio');-->
+<!--      categoryRadios.forEach(radio => {-->
+<!--        radio.addEventListener('change', function() {-->
+<!--          // 找到搜索输入字段并移除-->
+<!--          const searchQueryInput = document.getElementById('filter-search-query');-->
+<!--          if (searchQueryInput) {-->
+<!--            searchQueryInput.remove();-->
+<!--          }-->
+
+<!--          // 自动提交表单-->
+<!--          document.getElementById('filter-form').submit();-->
+<!--        });-->
+<!--      });-->
+<!--    });-->
+<!--  </script>-->
+<!--</body>-->
+<!--</html>-->

@@ -1,0 +1,256 @@
+{% extends 'tartantrade/base.html' %}
+{% load static %}
+
+{% block title %}Seller Orders - TartanTrade{% endblock %}
+
+{% block extra_css %}
+<style>
+  .order-card {
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .order-header {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .order-body {
+    padding: 15px;
+  }
+
+  .order-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .order-item:last-child {
+    border-bottom: none;
+  }
+
+  .order-item img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 15px;
+  }
+
+  .order-item-details {
+    flex: 1;
+  }
+
+  .order-status {
+    font-weight: bold;
+  }
+
+  .status-pending {
+    color: #ffc107;
+  }
+
+  .status-paid {
+    color: #17a2b8;
+  }
+
+  .status-shipped {
+    color: #6f42c1;
+  }
+
+  .status-completed {
+    color: #28a745;
+  }
+
+  .status-cancelled {
+    color: #dc3545;
+  }
+
+  .order-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+  }
+
+  .pagination {
+    justify-content: center;
+    margin-top: 30px;
+  }
+
+  .btn-primary {
+    background-color: #dc3545;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #bb2d3b;
+  }
+
+  .order-filter {
+    margin-bottom: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="text-center text-danger fw-bold mb-4">My Sales</h3>
+
+  <!-- Filter options -->
+  <div class="order-filter">
+    <form method="get" class="d-flex justify-content-center">
+      <div class="me-2">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+          <option value="">All Orders</option>
+          <option value="pending" {% if request.GET.status = 'pending' %}selected{% endif %}>Pending Payment</option>
+          <option value="paid" {% if request.GET.status = 'paid' %}selected{% endif %}>Paid</option>
+          <option value="shipped" {% if request.GET.status = 'shipped' %}selected{% endif %}>Shipped</option>
+          <option value="completed" {% if request.GET.status = 'completed' %}selected{% endif %}>Completed</option>
+          <option value="cancelled" {% if request.GET.status = 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+      </div>
+    </form>
+  </div>
+
+  {% if page_obj %}
+    <div class="orders-container">
+      {% for order in page_obj %}
+        <div class="order-card">
+          <div class="order-header d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-0">Order #{{ order.order_number }}</h5>
+              <p class="text-muted mb-0 small">Ordered on {{ order.created_time|date:"M d, Y" }}</p>
+            </div>
+            <div class="text-end">
+              <span class="order-status status-{{ order.status }}">
+                {{ order.get_status_display }}
+              </span>
+              <p class="mb-0">${{ order.total_price }}</p>
+            </div>
+          </div>
+
+          <div class="order-body">
+            <div class="order-item">
+              <img src="{% if order.item.picture %}{{ order.item.picture.url }}{% else %}https://via.placeholder.com/70{% endif %}" alt="{{ order.item.title }}">
+              <div class="order-item-details">
+                <h6 class="mb-1">{{ order.item.title }}</h6>
+                <p class="text-muted small mb-1">{{ order.item.description|truncatechars:100 }}</p>
+                <p class="small mb-0">
+                  <span class="text-muted">Buyer:</span> {{ order.buyer.username }}
+                  {% if order.payment_method %}
+                    <span class="mx-2">•</span>
+                    <span class="text-muted">Payment:</span> {{ order.payment_method }}
+                  {% endif %}
+                  {% if order.paid_time %}
+                    <span class="mx-2">•</span>
+                    <span class="text-muted">Paid on:</span> {{ order.paid_time|date:"M d, Y" }}
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <strong>Shipping Address:</strong>
+              <p class="mb-0">{{ order.shipping_address }}</p>
+            </div>
+
+            {% if order.remarks %}
+              <div class="mt-3">
+                <strong>Remarks:</strong>
+                <p class="small mb-0">{{ order.remarks }}</p>
+              </div>
+            {% endif %}
+
+            <div class="order-actions">
+              {% if order.status == 'paid' %}
+                <form method="post" action="{% url 'mark_as_shipped' order.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-shipping-fast me-1"></i> Mark as Shipped
+                  </button>
+                </form>
+              {% endif %}
+
+              {% if order.status == 'pending' %}
+                <form method="post" action="{% url 'cancel_order' order.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this order?')">
+                    <i class="fas fa-times me-1"></i> Cancel Order
+                  </button>
+                </form>
+              {% endif %}
+
+              <a href="#" class="btn btn-outline-secondary {% if order.status == 'paid' %}ms-2{% endif %}">
+                <i class="fas fa-comment me-1"></i> Contact Buyer
+              </a>
+
+              {% if order.status == 'completed' %}
+                <a href="#" class="btn btn-outline-primary ms-2">
+                  <i class="fas fa-star me-1"></i> Rate Buyer
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <!-- Pagination -->
+      {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="First">
+                  <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" aria-label="Last">
+                  <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="text-center my-5 py-5">
+      <h5>You haven't sold any items yet</h5>
+      <p class="text-muted">List your items for sale to start earning!</p>
+      <a href="#" class="btn btn-primary mt-3">Create Listing</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
